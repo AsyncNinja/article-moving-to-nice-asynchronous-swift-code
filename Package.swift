@@ -23,7 +23,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "NinjaPost",
+    name: "post-steps-towards-async",
     targets: [
     	Target(
     		name: "Common",

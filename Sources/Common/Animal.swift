@@ -72,23 +72,27 @@ public enum Animal : CustomStringConvertible {
     ]
 
     public var description: String {
-      switch self {
-      case .cat: return "🐱"
-      case .dog: return "🐶"
-      case .mouse: return "🐭"
-      case .hamster: return "🐹"
-      case .rabbit: return "🐰"
-      case .fox: return "🦊"
-      case .bear: return "🐻"
-      case .panda: return "🐼"
-      case .koala: return "🐨"
-      case .tiger: return "🐯"
-      case .lion: return "🦁"
-      case .cow: return "🐮"
-      case .pig: return "🐷"
-      case .frog: return "🐸"
-      case .monkey: return "🐵"
-      }
+      #if os(Linux)
+        return self.rawValue
+      #else
+        switch self {
+        case .cat: return "🐱"
+        case .dog: return "🐶"
+        case .mouse: return "🐭"
+        case .hamster: return "🐹"
+        case .rabbit: return "🐰"
+        case .fox: return "🦊"
+        case .bear: return "🐻"
+        case .panda: return "🐼"
+        case .koala: return "🐨"
+        case .tiger: return "🐯"
+        case .lion: return "🦁"
+        case .cow: return "🐮"
+        case .pig: return "🐷"
+        case .frog: return "🐸"
+        case .monkey: return "🐵"
+        }
+      #endif
     }
   }
 }

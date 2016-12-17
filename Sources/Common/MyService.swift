@@ -21,6 +21,7 @@
 //
 
 import Foundation
+import Dispatch
 import AsyncNinja
 
 // MyService provides various data. It serves as a glue code for transport and caching

@@ -23,13 +23,6 @@
 import Foundation
 import Common
 
-extension Array {
-  func randomElement() -> Iterator.Element {
-    let index = Int(arc4random()) % self.count
-    return self[index]
-  }
-}
-
 do {
   guard let path = ProcessInfo.processInfo.arguments.last else {
     print("Provide initial jsons directory as argument please")

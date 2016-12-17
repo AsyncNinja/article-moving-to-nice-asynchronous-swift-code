@@ -21,6 +21,7 @@
 //
 
 import Foundation
+import Dispatch
 
 public protocol PersonsProviderOnCallbacks {
   // this method is safe to call from any thread. Callback will be called on undefined thread
