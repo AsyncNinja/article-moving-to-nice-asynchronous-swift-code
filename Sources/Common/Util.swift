@@ -45,16 +45,16 @@ public extension Array where Element : JSONConvertible {
   import Darwin.C
 #endif
 
-func generateRandom() -> UInt32 {
+func generateRandom() -> Int {
   #if os(Linux)
     return random()
   #else
-    return arc4random()
+    return Int(arc4random())
   #endif
 }
 
 public func simulateNetwork() throws {
-  let value = generateRandom() % 3
+  let value = UInt32(generateRandom() % 3)
   guard 0 != value else { // trying to be realistic here
     throw ModelError.simulatedNetworkIssue
   }
@@ -63,7 +63,7 @@ public func simulateNetwork() throws {
 
 public extension Array {
   func randomElement() -> Iterator.Element {
-    let index = Int(generateRandom() % 3) % self.count
+    let index = generateRandom() % self.count
     return self[index]
   }
 }
