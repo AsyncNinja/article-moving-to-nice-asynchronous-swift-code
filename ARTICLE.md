@@ -30,7 +30,7 @@ Let's face synchronous variant first. I notice that oh too many projects are sti
 ```swift
 extension MyService {
   func person(identifier: String) throws -> Person? {
-    return /*fetch Person from network*/
+    return /*fetch person from network*/
   }
 }
 ```
@@ -41,14 +41,17 @@ Let's take a look at usage.
 ```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
-    DispatchQueue.global().async { // do not forget to dispatch to background
+	/* do not forget to dispatch to background */
+    DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
-        DispatchQueue.main.async { // do not forget to dispatch to main
+        /* do not forget to dispatch to main */
+        DispatchQueue.main.async {
           self.present(person: person)
         }
       } catch {
-        DispatchQueue.main.async { // do not forget to dispatch to main
+        /* do not forget to dispatch to main */
+        DispatchQueue.main.async {
           self.present(error: error)
         }
       }
@@ -93,8 +96,9 @@ extension MyService {
    func person(identifier: String,
                callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
-      let person = /*fetch Person from network*/
-      callback(person, nil) // do not forget to add call of callback here
+      let person = /*fetch person from network*/
+      /* do not forget to add call of callback here */
+      callback(person, nil)
     }
   }
 }
@@ -106,7 +110,8 @@ It looked pure*ish*, but now it is not. Let's see how we will use this interface
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) { (person, error) in
-      DispatchQueue.main.async { // do not forget to dispatch to main
+	  /* do not forget to dispatch to main */
+      DispatchQueue.main.async {
         if let error = error {
           self.present(error: error)
         } else {
@@ -138,7 +143,7 @@ extension MyViewController {
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) { _ in
-      return /*fetch Person from network*/
+      return /*fetch person from network*/
     }
   }
 }
@@ -149,7 +154,8 @@ This interface is almost as good as synchronous version.
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onCompletion(executor: .main) { // do not forget to dispatch to main
+	  /* do not forget to dispatch to main */
+      .onCompletion(executor: .main) {
         (personOrError) -> Void in
         switch personOrError {
         case .success(let person):
@@ -200,12 +206,14 @@ extension MyService {
               callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
-        callback(nil, ModelError.serviceIsMissing) // do not forget to add call of callback here
+      	/* do not forget to add call of callback here */
+        callback(nil, ModelError.serviceIsMissing)
         return
       }
 
-      let person = /*fetch Person from network*/
-      callback(person, nil) // do not forget to add call of callback here
+      let person = /*fetch person from network*/
+      /* do not forget to add call of callback here */
+      callback(person, nil)
     }
   }
 }
@@ -213,9 +221,12 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
-      [weak self] (person, error) in // do not forget weak self
-      DispatchQueue.main.async { // do not forget to dispatch to main
-        [weak self] in // do not forget weak self
+      /* do not forget weak self */
+      [weak self] (person, error) in
+      /* do not forget to dispatch to main */
+      DispatchQueue.main.async {
+		/* do not forget weak self */
+        [weak self] in
         guard let strongSelf = self else { return }
         if let error = error {
           strongSelf.present(error: error)
@@ -227,7 +238,7 @@ extension MyViewController {
   }
 }
 ```
-This solution definitely fixes described issue but does not meet out [Goals for New Approaches](#goals-for-new-approaches).
+This solution definitely fixes described issue but does not meet our [Goals for New Approaches](#goals-for-new-approaches).
 
 **Pros**
 
@@ -248,10 +259,11 @@ Let's apply the solution to futures-based approach. Maybe it will look better he
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
-      [weak self] _ in // do not forget weak self
+      /* do not forget weak self */
+      [weak self] _ in
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
-      return /*fetch person*/
+      return /*fetch person from network*/
     }
   }
 }
@@ -259,8 +271,10 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onCompletion(executor: .main) { // do not forget to dispatch to main
-        [weak self] (personOrError) in // do not forget weak self
+      /* do not forget to dispatch to main */
+      .onCompletion(executor: .main) {
+        /* do not forget weak self */
+        [weak self] (personOrError) in
         guard let strongSelf = self else { return }
         switch personOrError {
         case .success(let person):
@@ -312,7 +326,7 @@ That basically means that they can asynchronously execute code that influences t
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(context: self) { (self) in
-      return /*fetch Person from network*/
+      return /*fetch person from network*/
     }
   }
 }
