@@ -1,8 +1,21 @@
 # Steps towards asynchronous code
-This article is made to raise awareness about problems related to asynchronous code and to provide examples solving such problems.
+This article is made to raise awareness about problems related to asynchronous code
+and to provide examples solving such problems.
 
-## Before we start
-Let's describe what we want.
+### Contents
+* [Before we start](#before-we-start)
+* [Life Before Asynchronous Code](#life-before-asynchronous-code)
+* [Life Before Asynchronous Code](#life-before-asynchronous-code)
+* [Discussion of *"do not forget"*s](#discussion-of-do-not-forgets)
+* [Attempt 1.0 - Async with callbacks](#attempt-10---async-with-callbacks)
+* [Attempt 2.0 - Futures](#attempt-20---futures)
+* [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)
+* [Revealing Danger](#bugfix-11---async-with-callbacks-full-story)
+* [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
+* [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
+* [Summary](#summary)
+
+### Let's describe example of problem.
 
 * `Person` is an example of a struct that contains information about person.
 * `MyService` is an example of a class that serves as an entry point to model.
@@ -276,4 +289,4 @@ extension MyViewController {
 I love to pick between multiple variants using math. So:
 ![Summary](summary.png)
 
-IMHO "Refactoring 2.2 - Futures and ExecutionContext" has the best sum.
+"Refactoring 2.2 - Futures and ExecutionContext" has the best sum.
