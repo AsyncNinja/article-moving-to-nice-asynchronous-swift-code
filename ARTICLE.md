@@ -78,7 +78,7 @@ And we did not even think of possible deadlocks in `MyService` yet!
 
 So let's try to fix these issues.
 
-###Goal:
+###Goals:
 * fix "do not forgets"s
 * avoid possibility of deadlocks
 * provide reliable way of gluing ui and model together.
