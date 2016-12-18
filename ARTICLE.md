@@ -14,7 +14,7 @@ and to provide examples solving such problems. *It also mildly advertises [Async
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
 
-### Let's describe example of problem.
+### Let's describe an example of a problem.
 
 * `Person` is an example of a struct that contains information about person.
 * `MyService` is an example of a class that serves as an entry point to model.
@@ -68,7 +68,7 @@ Not as beautiful as interface. [Cyclomatic complexity](https://en.wikipedia.org/
 * *hides danger, see [Bugfix-1.1]*
 
 ## Discussion of *"do not forget"*s
-*IMHO* each of *"do not forget"*s signalises about poor architecture.  Even if you are
+*IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
 some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
 
@@ -81,7 +81,7 @@ So let's try to fix these issues.
 ###Goals:
 * fix "do not forgets"s
 * avoid possibility of deadlocks
-* provide reliable way of gluing ui and model together.
+* provide a reliable way of gluing UI and model together.
 
 ## Attempt 1.0 - Async with callbacks
 Since OS X 10.6 and iOS 4.0 we had closures (aka blocks).
@@ -118,7 +118,7 @@ extension MyViewController {
 ```
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) has rised even higher.
 
-*For those who see urge to add `weaks` all over the place. Go to [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)*
+*For those who see the urge to add `weaks` all over the place. Go to [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)*
 
 **Pros**
 
@@ -143,7 +143,6 @@ extension MyService {
 }
 ```
 This interface is almost as good as synchronous version. 
-
 
 ```swift
 extension MyViewController {
@@ -175,24 +174,24 @@ extension MyViewController {
 * *hides danger, see [Bugfix-1.1, Bugfix-2.1]*
 
 ## Revealing Danger
-Let's talk about lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
-are aware about queues, dispatches, threads and etc.
-So here is scenario:
+Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
+are aware of queues, dispatches, threads and etc.
+So here is the scenario:
 
 1. User taps button "Refresh Person Info"
 2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
 3. `MyService` starts to fetch person from network
 4. There are some network issues
 5. User does want not wait for too long, so he is just closing window/popover/modal view/anything
-6. Owner of `MyViewController` does not need the view controller any more. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
+6. The owner of `MyViewController` does not need the view controller anymore. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
 7. `MyViewController` is still retained by closure, so it will retain it's resources until the request completes
 8. Request might not complete for a while (depending on networking configs and etc)
 
 As result: memory consumption will grow, operations will continue running if results are not required any more.
-We have to fix this because memory and cpu resources are limited.
+We have to fix this because memory and CPU resources are limited.
 
 ## Bugfix 1.1 - Async with callbacks (full story)
-Usual fix is involves adding `weak`s all over the place.
+The usual fix is involves adding `weak`s all over the place.
 
 ```swift
 extension MyService {
@@ -242,7 +241,7 @@ This solution definitely fixes described issue but does not meet out [goals](#go
 * "do not forget" **x5**
 
 ## Bugfix 2.1 - Futures (full story)
-Let's apply solution to futures-based approach. Maybe it will look better here.
+Let's apply the solution to futures-based approach. Maybe it will look better here.
 
 ```swift
 extension MyService {
@@ -293,16 +292,16 @@ I had [goals](#goals) to achieve, so I had to move forward.
 Let's make a few assumptions before we explore this solution.
 
 1. for `MyService`
-	* `MyService` is an active object that has mutable state
-	* This state is allowed to change only on serial queue owned by `MyService`
-	* `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
-	* `MyService` communicates with another active objects predominantly using asynchronous calls only
+    * `MyService` is an active object that has mutable state
+    * This state is allowed to change only on serial queue owned by `MyService`
+    * `MyService` owns all operations it initiates, but neither of initiated operations owns `MyService`
+    * `MyService` communicates with other active objects predominantly using asynchronous calls only
 2. for `MyViewController`
-	* `MyViewController` is an active object that has mutable state (UI)
-	* This state is allowed to change only on main queue
-	* `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
-	* `MyViewController` communicates with another UI related classes predominantly on main queue 
-	* `MyViewController` communicates with another active objects predominantly using asynchronous calls
+    * `MyViewController` is an active object that has mutable state (UI)
+    * This state is allowed to change only on the main queue
+    * `MyViewController` owns all operations it initiates, but neither of initiated operations owns `MyViewController`
+    * `MyViewController` communicates with another UI related classes predominantly on the main queue 
+    * `MyViewController` communicates with other active objects predominantly using asynchronous calls
 
 So I conclude that `MyService` and `MyViewController` can be conformed to
 protocol `ExecutionContext` from [AsyncNinja](http://async.ninja/) library.
