@@ -1,6 +1,7 @@
 # Steps Towards Nice Asynchronous Code
 This article is made to raise awareness about problems related to asynchronous code
-and to provide examples solving such problems. *It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
+and to provide examples solving such problems in a context of programming on Swift 3.0.
+*It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
 ### Contents
 * [Let's describe a sample problem](#lets-describe-a-sample-problem)
@@ -9,8 +10,8 @@ and to provide examples solving such problems. *It also mildly advertises [Async
 * [Goals for New Approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
-* [Revealing Danger](#bugfix-11---async-with-callbacks-full-story)
-* [Bugfix 1.1 - Async with Callbacks (full story)](#revealing-danger)
+* [Revealing Danger](#revealing-danger)
+* [Bugfix 1.1 - Async with Callbacks (full story)](#bugfix-11---async-with-callbacks-full-story)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
