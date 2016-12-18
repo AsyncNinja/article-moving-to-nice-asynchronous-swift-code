@@ -3,9 +3,10 @@ This article is made to raise awareness about problems related to asynchronous c
 and to provide examples solving such problems. *It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
 ### Contents
-* [Before we start](#before-we-start)
+* [Let's describe a sample problem](#lets-describe-a-sample-problem)
 * [Life Before Asynchronous Code](#life-before-asynchronous-code)
 * [Discussion of *"do not forget"*s](#discussion-of-do-not-forgets)
+* [Goals for New Approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
 * [Revealing Danger](#bugfix-11---async-with-callbacks-full-story)
@@ -14,7 +15,7 @@ and to provide examples solving such problems. *It also mildly advertises [Async
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
 
-### Let's describe an example of a problem.
+## Let's describe a sample problem
 
 * `Person` is an example of a struct that contains information about person.
 * `MyService` is an example of a class that serves as an entry point to model.
@@ -55,7 +56,7 @@ extension MyViewController {
   }
 }
 ```
-Not as beautiful as interface. [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) is high too.
+Not as beautiful as interface.
 
 **Pros**
 
@@ -65,7 +66,7 @@ Not as beautiful as interface. [Cyclomatic complexity](https://en.wikipedia.org/
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hides danger, see [Bugfix-1.1]*
+* *hides danger, see [Revealing Danger](#revealing-danger)*
 
 ## Discussion of *"do not forget"*s
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
@@ -76,11 +77,11 @@ In more realistic conditions such calls are often nested or parallelized
 that adds triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
 
-So let's try to fix these issues.
+## Goals for New Approaches
+So let's try to fix issues of this approach. So new approaches have to meet goals
 
-###Goals:
-* fix "do not forgets"s
 * avoid possibility of deadlocks
+* no "do not forgets"s
 * provide a reliable way of gluing UI and model together.
 
 ## Attempt 1.0 - Async with callbacks
@@ -118,7 +119,7 @@ extension MyViewController {
 ```
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) has rised even higher.
 
-*For those who see the urge to add `weaks` all over the place. Go to [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)*
+*For those who see the urge to add `weaks` all over the place. Go to [Revealing Danger](#revealing-danger)*
 
 **Pros**
 
@@ -130,7 +131,7 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see [Bugfix-1.1]*
+* *hides danger, see [Revealing Danger](#revealing-danger)*
 
 ## Attempt 2.0 - Futures
 ```swift
@@ -171,7 +172,7 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see [Bugfix-1.1, Bugfix-2.1]*
+* *hides danger, see [Revealing Danger](#revealing-danger)*
 
 ## Revealing Danger
 Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
@@ -226,7 +227,7 @@ extension MyViewController {
   }
 }
 ```
-This solution definitely fixes described issue but does not meet out [goals](#goals).
+This solution definitely fixes described issue but does not meet out [Goals for New Approaches](#goals-for-new-approaches).
 
 **Pros**
 
@@ -286,10 +287,10 @@ Nope. It does not look better.
 * "do not forget" **x3**
 
 Unfortunately, all libraries I've seen that provide futures for Swift finish here.
-I had [goals](#goals) to achieve, so I had to move forward.
+I had [Goals for New Approaches](#goals-for-new-approaches) to achieve, so I had to move forward.
 
 ## Refactoring 2.2 - Futures and ExecutionContext
-Let's make a few assumptions before we explore this solution.
+Let's make a few assumptions before we explore this approach.
 
 1. for `MyService`
     * `MyService` is an active object that has mutable state
@@ -344,7 +345,7 @@ Just conform your active object to `ExecutionContext` (`UIResponder`/`NSResponde
 
 * one more library
 
-I think that all [goals](#goals) are achieved here.
+I think that all [goals](#goals-for-new-approaches) are achieved here.
 
 ## Summary
 I love to pick between multiple variants using math. So:
