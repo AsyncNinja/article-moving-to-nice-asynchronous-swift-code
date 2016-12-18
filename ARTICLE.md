@@ -41,15 +41,18 @@ Let's take a look at usage.
 ```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
+
 	/* do not forget to dispatch to background */
     DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
+
         /* do not forget to dispatch to main */
         DispatchQueue.main.async {
           self.present(person: person)
         }
       } catch {
+
         /* do not forget to dispatch to main */
         DispatchQueue.main.async {
           self.present(error: error)
@@ -77,7 +80,7 @@ some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
 
 In more realistic conditions such calls are often nested or parallelized
-that adds triples amount of code, complexity, and chances to make mistake.
+that triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
 
 ## Goals for New Approaches
@@ -97,6 +100,7 @@ extension MyService {
                callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = /*fetch person from network*/
+
       /* do not forget to add call of callback here */
       callback(person, nil)
     }
@@ -110,13 +114,16 @@ It looked pure*ish*, but now it is not. Let's see how we will use this interface
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) { (person, error) in
+
 	  /* do not forget to dispatch to main */
       DispatchQueue.main.async {
+
         if let error = error {
           self.present(error: error)
         } else {
           self.present(person: person)
         }
+
       }
     }
   }
@@ -154,15 +161,18 @@ This interface is almost as good as synchronous version.
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
+
 	  /* do not forget to dispatch to main */
       .onCompletion(executor: .main) {
         (personOrError) -> Void in
+
         switch personOrError {
         case .success(let person):
           self.present(person: person)
         case .failure(let error):
           self.present(error: error)
         }
+        
     }
   }
 }
@@ -204,14 +214,18 @@ The usual fix is involves adding `weak`s all over the place.
 extension MyService {
   func person(identifier: String,
               callback: @escaping (Person?, Error?) -> Void) {
+	
+	/* do not forget weak self */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
+
       	/* do not forget to add call of callback here */
         callback(nil, ModelError.serviceIsMissing)
         return
       }
 
       let person = /*fetch person from network*/
+
       /* do not forget to add call of callback here */
       callback(person, nil)
     }
@@ -221,13 +235,17 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
+
       /* do not forget weak self */
       [weak self] (person, error) in
+
       /* do not forget to dispatch to main */
       DispatchQueue.main.async {
+
 		/* do not forget weak self */
         [weak self] in
         guard let strongSelf = self else { return }
+
         if let error = error {
           strongSelf.present(error: error)
         } else {
@@ -259,10 +277,12 @@ Let's apply the solution to futures-based approach. Maybe it will look better he
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
+
       /* do not forget weak self */
       [weak self] _ in
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
+
       return /*fetch person from network*/
     }
   }
@@ -271,17 +291,21 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
+
       /* do not forget to dispatch to main */
       .onCompletion(executor: .main) {
+
         /* do not forget weak self */
         [weak self] (personOrError) in
         guard let strongSelf = self else { return }
+
         switch personOrError {
         case .success(let person):
           strongSelf.present(person: person)
         case .failure(let error):
           strongSelf.present(error: error)
         }
+        
     }
   }
 }
@@ -335,12 +359,14 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
       .onComplete(context: self) { (self, personOrError) in
+
         switch personOrError {
         case .success(let person):
           self.present(person: person)
         case .failure(let error):
           self.present(error: error)
         }
+        
     }
   }
 }
