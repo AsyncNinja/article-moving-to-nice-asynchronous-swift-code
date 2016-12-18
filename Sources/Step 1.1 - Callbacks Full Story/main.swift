@@ -30,12 +30,12 @@ extension MyService : PersonsProviderOnCallbacks {
                      callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
-        callback(nil, ModelError.serviceIsMissing)
+        callback(nil, ModelError.serviceIsMissing) // do not forget to add call of callback here
         return
       }
 
       let person = strongSelf.storage.person(identifier: identifier)
-      callback(person, nil)
+      callback(person, nil) // do not forget to add call of callback here
     }
   }
 

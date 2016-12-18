@@ -1,17 +1,29 @@
 # Steps towards asynchronous code
+This article is made to raise awareness about problems related to asynchronous code and to provide examples solving such problems.
 
 ## Before we start
-Let's describe what we want. `Person`, `MyService`.
+Let's describe what we want.
+
+* `Person` is an example of a struct that contains information about person.
+* `MyService` is an example of a class that serves as an entry point to model.
+* `MyViewController` is an example of a class that manages UI-related instances.
+
+We want `MyService` to provide `Person` by identifier to `MyViewController`.
+`MyService` may not have this information in memory, so fetching person might involve networking, disk operations and etc.
 
 ## Life Before Asynchronous Code
-
 ```swift
 extension MyService {
   func person(identifier: String) throws -> Person? {
     return /*fetch Person from network*/
   }
 }
+```
+Pretty straightforward. `input arguments -> output result`. Both methods can either
+return person *(or nil if there is no such person)* or throw issue if something went wrong.
+Let's take a look at usage.
 
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     DispatchQueue.global().async { // do not forget to dispatch to background
@@ -30,27 +42,38 @@ extension MyViewController {
 }
 ```
 
-Pretty straightforward. `input arguments -> output result`. Both methods can either return person *(or nil if there is no such person)* or throw issue if something went wrong.
 
 **Pros**
 
-* looks super simple
+* `MyService` interface and implementation looks simple
 
 **Cons**
 
-* hides great danger
+* "do not forget" **x3**
+* possibility of deadlocks in `MyService`
 
-## Revealing great danger
-Comment describes the only issue there is. Don't call after on main thread. This caveat is close to *never feed it after midnight*.
+## Discussion of *"do not forget"*s
+*IMHO* each of *"do not forget"*s signalises about poor architecture.  Even if you are
+some kind of robot that avoids mistakes in 99% of cases, application with 100
+of such calls will have at least one critical issue.
 
-## Release 1.0 - Async with callbacks
+In more realistic conditions such calls are often nested or parallelized that adds triples amount of code, complexity, and chances to make mistake.
+And did not even think of possible deadlocks in `MyService` yet!
+
+So let's try to fix these issues.
+#####Goal:
+* fix "do not forgets"s
+* avoid possibility of deadlocks
+* provide reliable way of gluing ui and model together.
+
+## Attempt 1.0 - Async with callbacks
 ```swift
 extension MyService {
-  public func person(identifier: String,
-                     callback: @escaping (Person?, Error?) -> Void) {
+   func person(identifier: String,
+               callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = /*fetch Person from network*/
-      callback(person, nil) // I really hope you will not forget to add call of callback here
+      callback(person, nil) // do not forget to add call of callback here
     }
   }
 }
@@ -72,18 +95,20 @@ extension MyViewController {
 
 **Pros**
 
-* removes great danger
+* fixes 2 "do not forget"s
+* possibility of deadlocks eliminated
 
 **Cons**
 
-* easy to forget to call callback at the end
+* adds another kind of "do not forget"
 * method output is listed as argument
-* *still hides danger, see [Bugfix-1.1]*
+* "do not forget" **x2**
+* *hides danger, see [Bugfix-1.1]*
 
-## Release 2.0 - Futures
+## Attempt 2.0 - Futures
 ```swift
 extension MyService {
-  public func person(identifier: String) -> Future<Person?> {
+  func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) { _ in
       return /*fetch Person from network*/
     }
@@ -94,7 +119,7 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     // let _ = ... looks ugly because AsyncNinja does not provide onCompletion(executor:...) on purpose (see 2.2)
     let _ = self.myService.person(identifier: identifier)
-      .mapCompletion(executor: .main) { // remember to dispatch to main
+      .mapCompletion(executor: .main) { // do not forget to dispatch to main
         (personOrError) -> Void in
         switch personOrError {
         case .success(let person):
@@ -109,30 +134,31 @@ extension MyViewController {
 
 **Pros**
 
-* removes great danger
-* not ugly any more
+* fixes 2 "do not forget"s
+* possibility of deadlocks eliminated
 
 **Cons**
 
 * one more library
-* *still hides danger, see [Bugfix-1.1, Bugfix-2.1]*
+* "do not forget" **x2**
+* *hides danger, see [Bugfix-1.1, Bugfix-2.1]*
 
-## Revealing lesser danger
+## Revealing Danger
 Consideration of `MyService` lifetime
 
 ## Bugfix 1.1 - Async with callbacks (full story)
 ```swift
 extension MyService {
-  public func person(identifier: String,
-                     callback: @escaping (Person?, Error?) -> Void) {
+  func person(identifier: String,
+              callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
-        callback(nil, ModelError.serviceIsMissing)
+        callback(nil, ModelError.serviceIsMissing) // do not forget to add call of callback here
         return
       }
 
       let person = /*fetch Person from network*/
-      callback(person, nil)
+      callback(person, nil) // do not forget to add call of callback here
     }
   }
 }
@@ -170,8 +196,13 @@ extension MyViewController {
 ## Bugfix 2.1 - Futures (full story)
 ```swift
 extension MyService {
-  public func person(identifier: String) throws -> Person? {
-    return /*fetch Person from network*/
+  public func person(identifier: String) -> Future<Person?> {
+    return future(executor: .queue(self.internalQueue)) {
+      [weak self] _ in //do not forget weak self
+      guard let strongSelf = self
+        else { throw ModelError.serviceIsMissing }
+      return /*fetch person*/
+    }
   }
 }
 
@@ -206,7 +237,7 @@ extension MyViewController {
 ## Refactoring 2.2 - Futures and ExecutionContext
 ```swift
 extension MyService {
-  public func person(identifier: String) -> Future<Person?> {
+  func person(identifier: String) -> Future<Person?> {
     return future(context: self) { (self) in
       return /*fetch Person from network*/
     }

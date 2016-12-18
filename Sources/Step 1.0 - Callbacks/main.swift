@@ -30,7 +30,7 @@ extension MyService : PersonsProviderOnCallbacks {
                      callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = self.storage.person(identifier: identifier)
-      callback(person, nil)
+      callback(person, nil) // do not forget to add call of callback here
     }
   }
 
