@@ -29,11 +29,11 @@ extension MyViewController {
     DispatchQueue.global().async { // do not forget to dispatch to background
       do {
         let person = try self.myService.person(identifier: identifier)
-        DispatchQueue.main.async { // do not forget ot dispatch to main
+        DispatchQueue.main.async { // do not forget to dispatch to main
           self.present(person: person)
         }
       } catch {
-        DispatchQueue.main.async { // do not forget ot dispatch to main
+        DispatchQueue.main.async { // do not forget to dispatch to main
           self.present(error: error)
         }
       }
@@ -49,8 +49,9 @@ extension MyViewController {
 
 **Cons**
 
-* "do not forget" **x3**
 * possibility of deadlocks in `MyService`
+* "do not forget" **x3**
+* *hides danger, see [Bugfix-1.1]*
 
 ## Discussion of *"do not forget"*s
 *IMHO* each of *"do not forget"*s signalises about poor architecture.  Even if you are
@@ -81,7 +82,7 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) { (person, error) in
-      DispatchQueue.main.async { // do not forget ot dispatch to main
+      DispatchQueue.main.async { // do not forget to dispatch to main
         if let error = error {
           self.present(error: error)
         } else {
@@ -117,9 +118,8 @@ extension MyService {
 
 extension MyViewController {
   func present(personWithID identifier: String) {
-    // let _ = ... looks ugly because AsyncNinja does not provide onCompletion(executor:...) on purpose (see 2.2)
-    let _ = self.myService.person(identifier: identifier)
-      .mapCompletion(executor: .main) { // do not forget to dispatch to main
+    self.myService.person(identifier: identifier)
+      .onCompletion(executor: .main) { // do not forget to dispatch to main
         (personOrError) -> Void in
         switch personOrError {
         case .success(let person):
@@ -134,6 +134,7 @@ extension MyViewController {
 
 **Pros**
 
+* `MyService` interface and implementation looks simple
 * fixes 2 "do not forget"s
 * possibility of deadlocks eliminated
 
@@ -166,9 +167,9 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
-      [weak self] (person, error) in //do not forget weak self
-      DispatchQueue.main.async {
-        [weak self] in // do not forget ot dispatch to main, do not forget weak self
+      [weak self] (person, error) in // do not forget weak self
+      DispatchQueue.main.async { // do not forget to dispatch to main
+        [weak self] in // do not forget weak self
         guard let strongSelf = self else { return }
         if let error = error {
           strongSelf.present(error: error)
@@ -183,22 +184,22 @@ extension MyViewController {
 
 **Pros**
 
-* removes great danger
-* removes lesser danger
+* removes hidden danger
+* possibility of deadlocks eliminated
 
 **Cons**
 
-* easy to forget to call callback at the end
+* looks ugly
+* adds another kind of "do not forget"
 * method output is listed as argument
-* uglier than 1.0
-* too much complexity to remember
+* "do not forget" **x5**
 
 ## Bugfix 2.1 - Futures (full story)
 ```swift
 extension MyService {
   public func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
-      [weak self] _ in //do not forget weak self
+      [weak self] _ in // do not forget weak self
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
       return /*fetch person*/
@@ -209,8 +210,8 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onCompletion(executor: .main) { // remember to dispatch to main
-        [weak self] (personOrError) in // remember weak self
+      .onCompletion(executor: .main) { // do not forget to dispatch to main
+        [weak self] (personOrError) in // do not forget weak self
         guard let strongSelf = self else { return }
         switch personOrError {
         case .success(let person):
@@ -225,16 +226,18 @@ extension MyViewController {
 
 **Pros**
 
-* removes great danger
-* removes lesser danger
+* removes hidden danger
+* possibility of deadlocks eliminated
 
 **Cons**
 
-* uglier than 2.0
-* too much complexity to remember
 * one more library
+* adds another kind of "do not forget"
+* "do not forget" **x3**
 
 ## Refactoring 2.2 - Futures and ExecutionContext
+This is one of the key features of [AsyncNinja](http://async.ninja/)
+
 ```swift
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
@@ -261,12 +264,16 @@ extension MyViewController {
 
 **Pros**
 
-* removes great danger
-* removes lesser danger
-* almost as beautiful as sync implementation
+* `MyService` interface and implementation looks simple
+* removes hidden danger
+* possibility of deadlocks eliminated
 
 **Cons**
 
 * one more library
 
 ## Summary
+I love to pick between multiple variants using math. So:
+![Summary](summary.png)
+
+IMHO "Refactoring 2.2 - Futures and ExecutionContext" has the best sum.
