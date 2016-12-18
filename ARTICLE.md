@@ -1,16 +1,15 @@
 # Steps towards asynchronous code
 This article is made to raise awareness about problems related to asynchronous code
-and to provide examples solving such problems.
+and to provide examples solving such problems. *It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
 ### Contents
 * [Before we start](#before-we-start)
 * [Life Before Asynchronous Code](#life-before-asynchronous-code)
-* [Life Before Asynchronous Code](#life-before-asynchronous-code)
 * [Discussion of *"do not forget"*s](#discussion-of-do-not-forgets)
 * [Attempt 1.0 - Async with callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
-* [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)
 * [Revealing Danger](#bugfix-11---async-with-callbacks-full-story)
+* [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
@@ -25,6 +24,8 @@ We want `MyService` to provide `Person` by identifier to `MyViewController`.
 `MyService` may not have this information in memory, so fetching person might involve networking, disk operations and etc.
 
 ## Life Before Asynchronous Code
+Let's face synchronous variant first. I notice that oh too many projects are still using this approach.
+
 ```swift
 extension MyService {
   func person(identifier: String) throws -> Person? {
@@ -54,7 +55,7 @@ extension MyViewController {
   }
 }
 ```
-
+Not as beautiful as interface. [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) is high too.
 
 **Pros**
 
@@ -71,16 +72,21 @@ extension MyViewController {
 some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
 
-In more realistic conditions such calls are often nested or parallelized that adds triples amount of code, complexity, and chances to make mistake.
-And did not even think of possible deadlocks in `MyService` yet!
+In more realistic conditions such calls are often nested or parallelized
+that adds triples amount of code, complexity, and chances to make mistake.
+And we did not even think of possible deadlocks in `MyService` yet!
 
 So let's try to fix these issues.
-#####Goal:
+
+###Goal:
 * fix "do not forgets"s
 * avoid possibility of deadlocks
 * provide reliable way of gluing ui and model together.
 
 ## Attempt 1.0 - Async with callbacks
+Since OS X 10.6 and iOS 4.0 we had closures (aka blocks).
+Using closures as callback opens another dimension in making asynchronous flows.
+
 ```swift
 extension MyService {
    func person(identifier: String,
@@ -91,7 +97,11 @@ extension MyService {
     }
   }
 }
+```
+So we are passing callback as last argument. This actually interface a little bit uglier.
+It looked pure*ish*, but now it is not. Let's see how we will use this interface.
 
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) { (person, error) in
@@ -106,6 +116,9 @@ extension MyViewController {
   }
 }
 ```
+[Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) has rised even higher.
+
+*For those who see urge to add `weaks` all over the place. Go to [Bugfix 1.1 - Async with callbacks (full story)](#revealing-danger)*
 
 **Pros**
 
@@ -128,7 +141,11 @@ extension MyService {
     }
   }
 }
+```
+This interface is almost as good as synchronous version. 
 
+
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
@@ -158,9 +175,25 @@ extension MyViewController {
 * *hides danger, see [Bugfix-1.1, Bugfix-2.1]*
 
 ## Revealing Danger
-Consideration of `MyService` lifetime
+Let's talk about lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
+are aware about queues, dispatches, threads and etc.
+So here is scenario:
+
+1. User taps button "Refresh Person Info"
+2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
+3. `MyService` starts to fetch person from network
+4. There are some network issues
+5. User does want not wait for too long, so he is just closing window/popover/modal view/anything
+6. Owner of `MyViewController` does not need the view controller any more. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
+7. `MyViewController` is still retained by closure, so it will retain it's resources until the request completes
+8. Request might not complete for a while (depending on networking configs and etc)
+
+As result: memory consumption will grow, operations will continue running if results are not required any more.
+We have to fix this because memory and cpu resources are limited.
 
 ## Bugfix 1.1 - Async with callbacks (full story)
+Usual fix is involves adding `weak`s all over the place.
+
 ```swift
 extension MyService {
   func person(identifier: String,
@@ -194,6 +227,7 @@ extension MyViewController {
   }
 }
 ```
+This solution definitely fixes described issue but does not meet out [goals](#goals).
 
 **Pros**
 
@@ -208,9 +242,11 @@ extension MyViewController {
 * "do not forget" **x5**
 
 ## Bugfix 2.1 - Futures (full story)
+Let's apply solution to futures-based approach. Maybe it will look better here.
+
 ```swift
 extension MyService {
-  public func person(identifier: String) -> Future<Person?> {
+  func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
       [weak self] _ in // do not forget weak self
       guard let strongSelf = self
@@ -237,6 +273,8 @@ extension MyViewController {
 }
 ```
 
+Nope. It does not look better.
+
 **Pros**
 
 * removes hidden danger
@@ -248,8 +286,27 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * "do not forget" **x3**
 
+Unfortunately, all libraries I've seen that provide futures for Swift finish here.
+I had [goals](#goals) to achieve, so I had to move forward.
+
 ## Refactoring 2.2 - Futures and ExecutionContext
-This is one of the key features of [AsyncNinja](http://async.ninja/)
+Let's make a few assumptions before we explore this solution.
+
+1. for `MyService`
+	* `MyService` is an active object that has mutable state
+	* This state is allowed to change only on serial queue owned by `MyService`
+	* `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
+	* `MyService` communicates with another active objects predominantly using asynchronous calls only
+2. for `MyViewController`
+	* `MyViewController` is an active object that has mutable state (UI)
+	* This state is allowed to change only on main queue
+	* `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
+	* `MyViewController` communicates with another UI related classes predominantly on main queue 
+	* `MyViewController` communicates with another active objects predominantly using asynchronous calls
+
+So I conclude that `MyService` and `MyViewController` can be conformed to
+protocol `ExecutionContext` from [AsyncNinja](http://async.ninja/) library.
+That basically means that they can asynchronously execute code that influences their lifetime and internal state.
 
 ```swift
 extension MyService {
@@ -275,6 +332,9 @@ extension MyViewController {
 }
 ```
 
+As you see, 99% of this complexity is hidden within [AsyncNinja](http://async.ninja/), so there is no need to think about it each time.
+Just conform your active object to `ExecutionContext` (`UIResponder`/`NSResponder` are automatically conformed to it) and use it.
+
 **Pros**
 
 * `MyService` interface and implementation looks simple
@@ -285,8 +345,10 @@ extension MyViewController {
 
 * one more library
 
+I think that all [goals](#goals) are achieved here.
+
 ## Summary
 I love to pick between multiple variants using math. So:
 ![Summary](summary.png)
 
-"Refactoring 2.2 - Futures and ExecutionContext" has the best sum.
+"Refactoring 2.2 - Futures and ExecutionContext" and [AsyncNinja](http://async.ninja/) has the best sum.
