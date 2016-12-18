@@ -1,4 +1,4 @@
-# Sample Code for Article ["Steps Towards Asynchronous Code"](https://github.com/AsyncNinja/post-steps-towards-async/blob/master/ARTICLE.md)
+# Sample Code for Article ["Steps Towards Nice Asynchronous Code"](https://github.com/AsyncNinja/post-steps-towards-async/blob/master/ARTICLE.md)
 
 #### Requirements
 * macOS with Xcode 8.0+ or Linux with Swift 3.0+

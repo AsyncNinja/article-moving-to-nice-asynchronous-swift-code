@@ -1,4 +1,4 @@
-# Steps Towards Asynchronous Code
+# Steps Towards Nice Asynchronous Code
 This article is made to raise awareness about problems related to asynchronous code
 and to provide examples solving such problems. *It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
@@ -344,8 +344,6 @@ Just conform your active object to `ExecutionContext` (`UIResponder`/`NSResponde
 **Cons**
 
 * one more library
-
-I think that all [goals](#goals-for-new-approaches) are achieved here.
 
 ## Summary
 I love to pick between multiple variants using math. So:
