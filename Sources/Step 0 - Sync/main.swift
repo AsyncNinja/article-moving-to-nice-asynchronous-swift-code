@@ -22,6 +22,7 @@
 
 import Foundation
 import Common
+import Dispatch
 
 // implementation PersonsProvider<...> in MyService
 extension MyService : PersonsProviderSync {

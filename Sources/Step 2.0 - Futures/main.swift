@@ -22,6 +22,7 @@
 
 import Foundation
 import Common
+import Dispatch
 import AsyncNinja
 
 // implementation PersonsProvider<...> in MyService

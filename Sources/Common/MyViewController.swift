@@ -21,7 +21,6 @@
 //
 
 import Foundation
-import AppKit
 import AsyncNinja
 
 #if os(Linux)
@@ -39,6 +38,8 @@ import AsyncNinja
     }
   }
 #else
+  import AppKit
+
   public class MyViewController : NSViewController {
     public var myService: MyService!
 
