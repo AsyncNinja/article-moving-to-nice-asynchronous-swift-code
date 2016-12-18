@@ -43,15 +43,20 @@ public struct Storage {
   let persons: [Person]
 
   public static func make() throws -> Storage {
-    guard let pathToPersonsJSON = ProcessInfo.processInfo.arguments.last else {
-      print("Provide path to persons.json please")
+    do {
+      guard let pathToPersonsJSON = ProcessInfo.processInfo.arguments.last else {
+        print("Provide path to persons.json please")
+        exit(-1)
+      }
+      let urlToPersonsJSON = URL(fileURLWithPath: (pathToPersonsJSON as NSString).expandingTildeInPath, isDirectory: true)
+      let data = try Data(contentsOf: urlToPersonsJSON)
+      let json = try JSONSerialization.jsonObject(with: data, options: [])
+
+      return try Storage(personsJSON: json)
+    } catch {
+      print("Provide path to valid persons.json please")
       exit(-1)
     }
-    let urlToPersonsJSON = URL(fileURLWithPath: pathToPersonsJSON, isDirectory: true)
-    let data = try Data(contentsOf: urlToPersonsJSON)
-    let json = try JSONSerialization.jsonObject(with: data, options: [])
-
-    return try Storage(personsJSON: json)
   }
 
   public init(personsJSON: Any) throws {

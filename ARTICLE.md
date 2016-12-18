@@ -1,4 +1,4 @@
-# Steps towards asynchronous code
+# Steps Towards Asynchronous Code
 This article is made to raise awareness about problems related to asynchronous code
 and to provide examples solving such problems. *It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
@@ -349,6 +349,8 @@ I think that all [goals](#goals-for-new-approaches) are achieved here.
 
 ## Summary
 I love to pick between multiple variants using math. So:
-![Summary](summary.png)
+![Summary](Resources/summary.png)
 
-"Refactoring 2.2 - Futures and ExecutionContext" and [AsyncNinja](http://async.ninja/) has the best sum.
+Looks like my attempt to achieve all [goals](#goals-for-new-approaches) completed successfully. I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
+
+If you want to take a deeper look at sample code or experiment yourself visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
