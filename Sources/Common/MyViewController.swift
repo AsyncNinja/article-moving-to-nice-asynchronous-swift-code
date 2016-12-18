@@ -21,42 +21,34 @@
 //
 
 import Foundation
-import Common
+import AppKit
 import AsyncNinja
 
-// implementation PersonsProvider<...> in MyService
-extension MyService : PersonsProviderOnFutures {
-  public func person(identifier: String) -> Future<Person?> {
-    return future(context: self) { (self) in
-      return self.storage.person(identifier: identifier)
+#if os(Linux)
+  public class MyViewController : ExecutionContext, ReleasePoolOwner {
+    public var myService: MyService!
+    public let releasePool = ReleasePool()
+    public let executor: Executor = .main
+
+    public func present(person: Person?) {
+      // managing ui
+    }
+
+    public func present(error: Error) {
+      // managing ui
     }
   }
+#else
+  public class MyViewController : NSViewController {
+    public var myService: MyService!
 
-  public func page(index: Int, personsPerPage: Int, ordering: Ordering) -> Future<[Person]?> {
-    return future(executor: .utility, block: simulateNetwork)
-      .map(context: self) { (self, _) in
-        return self.storage
-          .page(index: index, personsPerPage: personsPerPage, ordering: ordering)
+    public func present(person: Person?) {
+      // managing ui
+    }
+
+    public func present(error: Error) {
+      // managing ui
     }
   }
-}
+#endif
 
-// example of usage in UI-related class
-extension MyViewController {
-  func present(personWithID identifier: String) {
-    self.myService.person(identifier: identifier)
-      .onComplete(context: self) {
-        (self, personOrError) in
-        switch personOrError {
-        case .success(let person):
-          self.present(person: person)
-        case .failure(let error):
-          self.present(error: error)
-        }
-    }
-  }
-}
-
-let myService = MyService(storage: try! Storage.make())
-myService.printPerson(identifier: "3")
-myService.printPage(index: 4, personsPerPage: 10, ordering: .firstName)

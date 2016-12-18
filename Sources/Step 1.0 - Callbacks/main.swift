@@ -23,6 +23,7 @@
 import Foundation
 import Common
 
+// implementation PersonsProvider<...> in MyService
 extension MyService : PersonsProviderOnCallbacks {
   public func person(identifier: String,
                      callback: @escaping (Person?, Error?) -> Void) {
@@ -41,6 +42,21 @@ extension MyService : PersonsProviderOnCallbacks {
         callback(persons, nil)
       } catch {
         callback(nil, error)
+      }
+    }
+  }
+}
+
+// example of usage in UI-related class
+extension MyViewController {
+  func present(personWithID identifier: String) {
+    self.myService.person(identifier: identifier) { (person, error) in
+      DispatchQueue.main.async { // do not forget ot dispatch to main
+        if let error = error {
+          self.present(error: error)
+        } else {
+          self.present(person: person)
+        }
       }
     }
   }

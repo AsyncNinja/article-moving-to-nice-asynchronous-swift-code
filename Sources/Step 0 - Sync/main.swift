@@ -23,6 +23,7 @@
 import Foundation
 import Common
 
+// implementation PersonsProvider<...> in MyService
 extension MyService : PersonsProviderSync {
   public func person(identifier: String) throws -> Person? {
     return self.storage.person(identifier: identifier)
@@ -31,6 +32,24 @@ extension MyService : PersonsProviderSync {
   public func page(index: Int, personsPerPage: Int, ordering: Ordering) throws -> [Person]? {
     try simulateNetwork()
     return self.storage.page(index: index, personsPerPage: personsPerPage, ordering: ordering)
+  }
+}
+
+// example of usage in UI-related class
+extension MyViewController {
+  func present(personWithID identifier: String) {
+    DispatchQueue.global().async { // do not forget to dispatch to background
+      do {
+        let person = try self.myService.person(identifier: identifier)
+        DispatchQueue.main.async { // do not forget ot dispatch to main
+          self.present(person: person)
+        }
+      } catch {
+        DispatchQueue.main.async { // do not forget ot dispatch to main
+          self.present(error: error)
+        }
+      }
+    }
   }
 }
 

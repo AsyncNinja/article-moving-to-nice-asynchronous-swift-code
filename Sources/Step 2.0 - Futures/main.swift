@@ -24,6 +24,7 @@ import Foundation
 import Common
 import AsyncNinja
 
+// implementation PersonsProvider<...> in MyService
 extension MyService : PersonsProviderOnFutures {
   public func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) { _ in
@@ -36,6 +37,23 @@ extension MyService : PersonsProviderOnFutures {
       .map(executor: .queue(self.internalQueue)) { _ in
         return self.storage
           .page(index: index, personsPerPage: personsPerPage, ordering: ordering)
+    }
+  }
+}
+
+// example of usage in UI-related class
+extension MyViewController {
+  func present(personWithID identifier: String) {
+    // let _ = ... looks ugly because AsyncNinja does not provide onCompletion(executor:...) on purpose (see 2.2)
+    let _ = self.myService.person(identifier: identifier)
+      .mapCompletion(executor: .main) { // remember to dispatch to main
+        (personOrError) -> Void in
+        switch personOrError {
+        case .success(let person):
+          self.present(person: person)
+        case .failure(let error):
+          self.present(error: error)
+        }
     }
   }
 }
