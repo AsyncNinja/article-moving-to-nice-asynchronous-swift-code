@@ -392,6 +392,7 @@ to `ExecutionContext` (`UIResponder`/`NSResponder` are automatically conformed t
 ## Summary
 I love to pick between multiple variants using math. So:
 ![Summary](Resources/summary.png)
+*[Summary as Numbers Sheet](Resources/summary.numbers.zip)*
 
 Looks like my attempt to achieve all [goals](#goals-for-new-approaches) completed successfully.
 I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
