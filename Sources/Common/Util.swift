@@ -67,3 +67,27 @@ public extension Array {
     return self[index]
   }
 }
+
+extension String {
+  var expandingTildeInPath: String {
+      if let range = self.range(of: "~"), range.lowerBound == self.characters.startIndex {
+        var result = self
+        result.replaceSubrange(range, with: NSHomeDirectory())
+        return result
+      } else {
+        return self
+      }
+  }
+
+  var expandingPath: String {
+    if let range = self.range(of: "~"), range.lowerBound == self.characters.startIndex {
+      var result = self
+      result.replaceSubrange(range, with: NSHomeDirectory())
+      return result
+    } else if self.hasPrefix("/") {
+      return self
+    } else {
+      return FileManager.default.currentDirectoryPath + "/" + self
+    }
+  }
+}

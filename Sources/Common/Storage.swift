@@ -48,7 +48,7 @@ public struct Storage {
         print("Provide path to persons.json please")
         exit(-1)
       }
-      let urlToPersonsJSON = URL(fileURLWithPath: (pathToPersonsJSON as NSString).expandingTildeInPath, isDirectory: true)
+      let urlToPersonsJSON = URL(fileURLWithPath: pathToPersonsJSON.expandingPath, isDirectory: true)
       let data = try Data(contentsOf: urlToPersonsJSON)
       let json = try JSONSerialization.jsonObject(with: data, options: [])
 

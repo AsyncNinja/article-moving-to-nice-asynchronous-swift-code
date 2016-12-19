@@ -1,7 +1,7 @@
 #! /bin/bash
 
 swift build
-PERSONS_JSON="$PWD/Resources/persons.json"
+PERSONS_JSON="Resources/persons.json"
 
 "./.build/debug/Step 0 - Sync" "$PERSONS_JSON"
 "./.build/debug/Step 1.0 - Callbacks" "$PERSONS_JSON"
