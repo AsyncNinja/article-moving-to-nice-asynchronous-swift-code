@@ -29,9 +29,12 @@ import AsyncNinja
 extension MyService : PersonsProviderOnFutures {
   public func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
+
+      /* do not forget weak self */
       [weak self] _ in
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
+
       return strongSelf.storage.person(identifier: identifier)
     }
   }
@@ -39,9 +42,12 @@ extension MyService : PersonsProviderOnFutures {
   public func page(index: Int, personsPerPage: Int, ordering: Ordering) -> Future<[Person]?> {
     return future(executor: .utility, block: simulateNetwork)
       .map(executor: .queue(self.internalQueue)) {
+
+        /* do not forget weak self */
         [weak self] _ in
         guard let strongSelf = self
           else { throw ModelError.serviceIsMissing }
+
         return strongSelf.storage
           .page(index: index, personsPerPage: personsPerPage, ordering: ordering)
     }
@@ -52,15 +58,21 @@ extension MyService : PersonsProviderOnFutures {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onComplete(executor: .main) { // remember to dispatch to main
-        [weak self] (personOrError) -> Void in // remember weak self
+
+      /* do not forget to dispatch to main */
+      .onComplete(executor: .main) {
+
+        /* do not forget weak self */
+        [weak self] (personOrError) in
         guard let strongSelf = self else { return }
+
         switch personOrError {
         case .success(let person):
           strongSelf.present(person: person)
         case .failure(let error):
           strongSelf.present(error: error)
         }
+        
     }
   }
 }

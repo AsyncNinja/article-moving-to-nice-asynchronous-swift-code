@@ -39,14 +39,20 @@ extension MyService : PersonsProviderSync {
 // example of usage in UI-related class
 extension MyViewController {
   func present(personWithID identifier: String) {
-    DispatchQueue.global().async { // do not forget to dispatch to background
+
+    /* do not forget to dispatch to background */
+    DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
-        DispatchQueue.main.async { // do not forget ot dispatch to main
+
+        /* do not forget to dispatch to main */
+        DispatchQueue.main.async {
           self.present(person: person)
         }
       } catch {
-        DispatchQueue.main.async { // do not forget ot dispatch to main
+
+        /* do not forget to dispatch to main */
+        DispatchQueue.main.async {
           self.present(error: error)
         }
       }

@@ -30,7 +30,9 @@ extension MyService : PersonsProviderOnCallbacks {
                      callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = self.storage.person(identifier: identifier)
-      callback(person, nil) // do not forget to add call of callback here
+
+      /* do not forget to add call of callback here */
+      callback(person, nil)
     }
   }
 
@@ -40,8 +42,12 @@ extension MyService : PersonsProviderOnCallbacks {
       do {
         try simulateNetwork()
         let persons = self.storage.page(index: index, personsPerPage: personsPerPage, ordering: ordering)
+
+        /* do not forget to add call of callback here */
         callback(persons, nil)
       } catch {
+
+        /* do not forget to add call of callback here */
         callback(nil, error)
       }
     }
@@ -52,12 +58,16 @@ extension MyService : PersonsProviderOnCallbacks {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) { (person, error) in
-      DispatchQueue.main.async { // do not forget ot dispatch to main
+
+      /* do not forget to dispatch to main */
+      DispatchQueue.main.async {
+
         if let error = error {
           self.present(error: error)
         } else {
           self.present(person: person)
         }
+
       }
     }
   }

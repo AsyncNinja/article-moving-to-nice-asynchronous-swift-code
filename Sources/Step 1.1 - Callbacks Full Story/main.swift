@@ -28,21 +28,30 @@ import Dispatch
 extension MyService : PersonsProviderOnCallbacks {
   public func person(identifier: String,
                      callback: @escaping (Person?, Error?) -> Void) {
+    /* do not forget weak self */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
-        callback(nil, ModelError.serviceIsMissing) // do not forget to add call of callback here
+
+        /* do not forget to add call of callback here */
+        callback(nil, ModelError.serviceIsMissing)
         return
       }
 
       let person = strongSelf.storage.person(identifier: identifier)
-      callback(person, nil) // do not forget to add call of callback here
+
+      /* do not forget to add call of callback here */
+      callback(person, nil)
     }
   }
 
   public func page(index: Int, personsPerPage: Int, ordering: Ordering,
                    callback: @escaping ([Person]?, Error?) -> Void) {
+
+    /* do not forget weak self */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
+
+        /* do not forget to add call of callback here */
         callback(nil, ModelError.serviceIsMissing)
         return
       }
@@ -50,8 +59,12 @@ extension MyService : PersonsProviderOnCallbacks {
       do {
         try simulateNetwork()
         let persons = strongSelf.storage.page(index: index, personsPerPage: personsPerPage, ordering: ordering)
+
+        /* do not forget weak self */
         callback(persons, nil)
       } catch {
+
+        /* do not forget weak self */
         callback(nil, error)
       }
     }
@@ -62,10 +75,17 @@ extension MyService : PersonsProviderOnCallbacks {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
-      [weak self] (person, error) in //do not forget weak self
+
+      /* do not forget weak self */
+      [weak self] (person, error) in
+
+      /* do not forget to dispatch to main */
       DispatchQueue.main.async {
-        [weak self] in // do not forget ot dispatch to main, do not forget weak self
+
+        /* do not forget weak self */
+        [weak self] in
         guard let strongSelf = self else { return }
+
         if let error = error {
           strongSelf.present(error: error)
         } else {
@@ -75,7 +95,6 @@ extension MyViewController {
     }
   }
 }
-
 let myService = MyService(storage: try! Storage.make())
 myService.printPerson(identifier: "3")
 myService.printPage(index: 4, personsPerPage: 10, ordering: .firstName)

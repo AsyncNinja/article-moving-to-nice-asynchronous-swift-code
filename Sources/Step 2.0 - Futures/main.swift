@@ -46,14 +46,18 @@ extension MyService : PersonsProviderOnFutures {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onComplete(executor: .main) { // remember to dispatch to main
+
+      /* do not forget to dispatch to main */
+      .onComplete(executor: .main) {
         (personOrError) -> Void in
+
         switch personOrError {
         case .success(let person):
           self.present(person: person)
         case .failure(let error):
           self.present(error: error)
         }
+        
     }
   }
 }

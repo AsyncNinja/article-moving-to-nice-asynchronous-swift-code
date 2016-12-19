@@ -165,7 +165,7 @@ extension MyViewController {
     self.myService.person(identifier: identifier)
 
 	  /* do not forget to dispatch to main */
-      .onCompletion(executor: .main) {
+      .onComplete(executor: .main) {
         (personOrError) -> Void in
 
         switch personOrError {
@@ -297,7 +297,7 @@ extension MyViewController {
     self.myService.person(identifier: identifier)
 
       /* do not forget to dispatch to main */
-      .onCompletion(executor: .main) {
+      .onComplete(executor: .main) {
 
         /* do not forget weak self */
         [weak self] (personOrError) in
