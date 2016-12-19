@@ -45,9 +45,8 @@ extension MyService : PersonsProviderOnFutures {
 // example of usage in UI-related class
 extension MyViewController {
   func present(personWithID identifier: String) {
-    // let _ = ... looks ugly because AsyncNinja does not provide onCompletion(executor:...) on purpose (see 2.2)
-    let _ = self.myService.person(identifier: identifier)
-      .mapCompletion(executor: .main) { // remember to dispatch to main
+    self.myService.person(identifier: identifier)
+      .onComplete(executor: .main) { // remember to dispatch to main
         (personOrError) -> Void in
         switch personOrError {
         case .success(let person):
