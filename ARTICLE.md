@@ -81,7 +81,7 @@ some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
 
 In more realistic conditions such calls are often nested or parallelized
-that triples amount of code, complexity, and chances to make mistake.
+that the triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
 
 ## Goals for New Approaches
@@ -148,6 +148,9 @@ extension MyViewController {
 
 ## Attempt 2.0 - Futures
 Let's try one more approach. Idea [futures](https://en.wikipedia.org/wiki/Futures_and_promises) has involved separately. But combination with closures improves futures much.
+
+This is more advanced approach then previous one. So make sure that you read explanation below code if you unfamiliar with this idea.
+
 ```swift
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
@@ -157,7 +160,20 @@ extension MyService {
   }
 }
 ```
+
 This interface is almost as good as synchronous version. 
+
+>
+> Short explanation of what has happened.
+>
+> Call of function `future(executor: ...) { ... }` does two things
+> 1. returns `Future<Person>`
+> 2. asynchronously executes closure on specified *exectutor*. Returting value from the closure will cause future from (1) to complete
+>
+> *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
+>
+> So we've dispatched execution of "fetch person from network" and returned future 
+>
 
 ```swift
 extension MyViewController {
@@ -179,6 +195,17 @@ extension MyViewController {
   }
 }
 ```
+
+>
+> Short explanation of what has happened.
+>
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`
+> With line `.onComplete(executor: .main) {` we specified reaction on completion of the future.
+> `executor: main` means specified closure will be executed on main executor aka main queue.
+> This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
+> except it has case `.failure(Error)` instead of `.none`
+> So by switching between two available cases we are either presenting a person or presenting an error.
+>
 
 **Pros**
 
@@ -212,7 +239,7 @@ So here is the scenario:
 We have to fix this because memory and CPU resources are limited.
 
 ## Bugfix 1.1 - Async with Callbacks (full story)
-The usual fix is involves adding `weak`s all over the place.
+The usual fix involves adding `weak`s all over the place.
 
 ```swift
 extension MyService {
@@ -357,7 +384,18 @@ extension MyService {
     }
   }
 }
+```
+>
+> Short explanation of what has happened.
+>
+> `MyService` as mentioned before conforms to `ExecutionContext`. This allows us to call
+> `future(context: ...) { ... }` that similar to previously mentioned function that dispatches closure and returns future.
+> The key difference between `future(context: ...) { ... }` and `future(executor: ...) { ... }` is that first is contextual.
+> It means that execution of closure is bound to that context. Closure will be provided with specified context.
+> It means that boilerplate memory management will be done inside `future(context: ...) { ... }` rather then in calling code.
+>
 
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
@@ -375,9 +413,22 @@ extension MyViewController {
 }
 ```
 
-As you see, 99% of this complexity is hidden within [AsyncNinja](http://async.ninja/),
-so there is no need to think about it each time. Just conform your active object
-to `ExecutionContext` (`UIResponder`/`NSResponder` are automatically conformed to it) and use it.
+>
+> Short explanation of what has happened.
+>
+> `MyViewController` as mentioned before conforms to `ExecutionContext`.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> With line `.onComplete(context: self) {` we've specified reaction on completion of the future.
+> `context: self` means that specified closure will be executed on `ExecutionContext`'s
+> executor (main queue in this case) if context is still alive.
+> This closure has a context and `Fallible<Person?>` as arguments.
+>
+
+So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
+encapsulates 99% of this complexity. This must help you to reduce amount of boilerplate code.
+Just conform your active object to `ExecutionContext` and use futures safely.
+[AsyncNinja](http://async.ninja/) provides conformance to `ExecutionContext`
+for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc.
 
 **Pros**
 
