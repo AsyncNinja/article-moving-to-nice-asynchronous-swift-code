@@ -74,7 +74,7 @@ Not as beautiful as interface.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hides danger, see [Revealing Danger](#revealing-danger)*
+* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
 ## Discussion of *"do not forget"*s
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
@@ -133,7 +133,7 @@ extension MyViewController {
 ```
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) has rised :(
 
-*For those who see the urge to add `weaks` all over the place. Go to [Revealing Danger](#revealing-danger)*
+*For those who see the urge to add `weaks` all over the place. Go to "[Revealing Danger](#revealing-danger)" paragraph*
 
 **Pros**
 
@@ -145,10 +145,10 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see [Revealing Danger](#revealing-danger)*
+* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
 ## Attempt 2.0 - Futures
-Let's try one more approach. Idea [futures](https://en.wikipedia.org/wiki/Futures_and_promises) has involved separately. But combination with closures improves futures much.
+Let’s try one more approach. Idea [futures](https://en.wikipedia.org/wiki/Futures_and_promises) has involved separately. It is a great. In combination with closures makes this approach even more powerful.
 
 This is more advanced approach than previous one. So make sure that you read explanations below code if you are unfamiliar with this idea.
 
@@ -162,18 +162,16 @@ extension MyService {
 }
 ```
 
-This interface is almost as good as a synchronous version. 
-
 >
 > Short explanation of what has happened.
 >
 > Call of function `future(executor: ...) { ... }` does two things
 > 1. returns `Future<Person>`
-> 2. asynchronously executes closure on specified *exectutor*. Returting value from the closure will cause future from (1) to complete
+> 2. asynchronously executes closure on specified *executor*. Returting value from the closure will cause future to complete
 >
 > *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
 >
-> So we've dispatched execution of "fetch person from network" and returned future 
+> So we've dispatched execution of "fetch person from network" and returned future.
 >
 
 ```swift
@@ -200,12 +198,12 @@ extension MyViewController {
 >
 > Short explanation of what has happened.
 >
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`
-> With line `.onComplete(executor: .main) {` we specified reaction on completion of the future.
-> `executor: main` means specified closure will be executed on the main executor aka main queue.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> With line `.onComplete(executor: .main) {` we've specified reaction on completion of the future.
+> `executor: main` means that specified closure will be executed on the main executor aka main queue.
 > This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
 > except it has case `.failure(Error)` instead of `.none`
-> So by switching between two available cases we are either presenting a person or presenting an error.
+> So by switching between two available cases we are either presenting a person (`Person`) or presenting an error.
 >
 
 **Pros**
@@ -227,7 +225,7 @@ Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them 
 are aware of queues, dispatches, threads and etc.
 So here is the scenario:
 
-1. User taps button "Refresh Person Info"
+1. User presses button "Refresh Person Info"
 2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
 3. `MyService` starts to fetch person from network
 4. There are some network issues
@@ -236,7 +234,7 @@ So here is the scenario:
 7. `MyViewController` is still retained by closure, so it will retain it's resources until the request completes
 8. Request might not complete for a while (depending on networking configs and etc)
 
-**As result**: memory consumption will grow, operations will continue running event if results are not required any more.
+**As result**: memory consumption will grow, operations will continue running even if there is no need for results anymore.
 We have to fix this because memory and CPU resources are limited.
 
 ## Bugfix 1.1 - Async with Callbacks (full story)
@@ -356,7 +354,7 @@ Nope. It does not look better.
 * "do not forget" **x3**
 
 Unfortunately, all libraries I've seen that provide futures for Swift finish here.
-I had [Goals for New Approaches](#goals-for-new-approaches) to achieve, so I had to move forward.
+We have [goals](#goals-for-new-approaches) to achieve, so we must to move forward.
 
 ## Refactoring 2.2 - Futures and ExecutionContext
 Let's make a few assumptions before we explore this approach.
@@ -365,7 +363,7 @@ Let's make a few assumptions before we explore this approach.
     * `MyService` is an active object that has mutable state
     * This state is allowed to change only on serial queue owned by `MyService`
     * `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
-    * `MyService` communicates with other active objects predominantly using asynchronous calls only
+    * `MyService` communicates with other active objects predominantly using asynchronous calls
 2. for `MyViewController`
     * `MyViewController` is an active object that has mutable state (UI)
     * This state is allowed to change only on the main queue
@@ -392,7 +390,7 @@ extension MyService {
 > `MyService` as mentioned before conforms to `ExecutionContext`. This allows us to call
 > `future(context: ...) { ... }` that similar to previously mentioned function that dispatches closure and returns future.
 > The key difference between `future(context: ...) { ... }` and `future(executor: ...) { ... }` is that first is contextual.
-> It means that execution of closure is bound to that context. Closure will be provided with specified context.
+> It means that execution of closure is bound to context. Closure will be provided with context instance as first argument.
 > It means that boilerplate memory management will be done inside `future(context: ...) { ... }` rather then in calling code.
 >
 
@@ -428,7 +426,7 @@ extension MyViewController {
 So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
 encapsulates 99% of this complexity. This must help you to reduce an amount of boilerplate code.
 Just conform your active object to `ExecutionContext` and use futures safely.
-[AsyncNinja](http://async.ninja/) provides conformance to `ExecutionContext`
+[AsyncNinja](http://async.ninja/) also provides conformance to `ExecutionContext`
 for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc.
 
 **Pros**
@@ -446,7 +444,7 @@ I love to pick between multiple variants using math. So:
 ![Summary](Resources/summary.png)
 *[Summary as Numbers Sheet](Resources/summary.numbers.zip)*
 
-Looks like my attempt to achieve all [goals](#goals-for-new-approaches) completed successfully.
+Looks like our attempt to achieve all [goals](#goals-for-new-approaches) completed successfully.
 I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
 
 If you want to take a deeper look at sample code or experiment yourself
@@ -455,7 +453,7 @@ visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
 ## Further Improvements
 Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
 
-Scala for example has this kind of syntactic sugar for futures. Here is an example of combining futures in scala:
+Scala for example has syntactic sugar for futures. Here is an example of combining futures in scala:
 
 ```scala
 val futureA = Future{...}
