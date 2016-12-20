@@ -131,13 +131,13 @@ extension MyViewController {
   }
 }
 ```
-[Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) has rised :(
+[Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) raised :(
 
 *For those who see the urge to add `weaks` all over the place. Go to "[Revealing Danger](#revealing-danger)" paragraph*
 
 **Pros**
 
-* fixes 2 "do not forget"s
+* fixes one "do not forget"
 * possibility of deadlocks eliminated
 
 **Cons**
@@ -229,7 +229,7 @@ So here is the scenario:
 2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
 3. `MyService` starts to fetch person from network
 4. There are some network issues
-5. User does not want to wait for too long, so he is just closing window/popover/modal view/anything
+5. User does not want to wait for too long, so he/she is just closing window/popover/modal view/anything
 6. The owner of `MyViewController` does not need the view controller anymore. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
 7. `MyViewController` is still retained by closure, so it will retain it's resources until the request completes
 8. Request might not complete for a while (depending on networking configs and etc)
