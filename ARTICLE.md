@@ -1,12 +1,11 @@
 # Steps Towards Nice Asynchronous Code
 This article is made to raise awareness about problems related to asynchronous code
 and to provide examples solving such problems in a context of programming on Swift 3.0.
-*It also mildly advertises [AsyncNinja](http://async.ninja/) library.*
 
 ### Contents
-* [Let's describe a sample problem](#lets-describe-a-sample-problem)
-* [Life Before Asynchronous Code](#life-before-asynchronous-code)
-* [Discussion of *"do not forget"*s](#discussion-of-do-not-forgets)
+* [Description of a sample problem](#description-of-a-sample-problem)
+* [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
+* [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
 * [Goals for New Approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
@@ -20,34 +19,36 @@ and to provide examples solving such problems in a context of programming on Swi
 * [Summary](#summary)
 * [Further Improvements](#further-improvements)
 
-## Let's describe a sample problem
+## Description of a sample problem
+Here’s the source data:
 
 * `Person` is an example of a struct that contains information about person.
 * `MyService` is an example of a class that serves as an entry point to model.
 * `MyViewController` is an example of a class that manages UI-related instances.
 
-We want `MyService` to provide `Person` by identifier to `MyViewController`.
-`MyService` may not have this information in memory, so fetching person might involve networking, disk operations and etc.
+`MyService` must provide `Person` to `MyViewController` in return to the request with the corresponding identifier.
+`MyService` may not have requested information in memory, so fetching person data might involve networking, disk operations and etc.
 
-## Life Before Asynchronous Code
-Let's face synchronous variant first. I notice that oh too many projects are still using this approach.
+## Going back to the sync coding era
+Let's face synchronous variant first. I notice that oh many projects are still using this approach.
 
 ```swift
 extension MyService {
   func person(identifier: String) throws -> Person? {
-    return /*fetch person from network*/
+    return /*fetch the person from network*/
   }
 }
 ```
 Pretty straightforward. `input arguments -> output result`. Method can either
 return person *(or nil if there is no such person)* or throw issue if something went wrong.
-Let's take a look at usage.
+
+That’s how it looks if used:
 
 ```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
 
-	/* do not forget to dispatch to background */
+	/* do not forget to dispatch to background queue */
     DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
@@ -79,7 +80,7 @@ Not as beautiful as interface.
 * "do not forget" **x3**
 * *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
-## Discussion of *"do not forget"*s
+## A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
 some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
@@ -104,7 +105,7 @@ extension MyService {
    func person(identifier: String,
                callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
-      let person = /*fetch person from network*/
+      let person = /*fetch the person from network*/
 
       /* do not forget to add call of callback here */
       callback(person, nil)
@@ -159,7 +160,7 @@ This is more advanced approach than previous one. So make sure that you read exp
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) { _ in
-      return /*fetch person from network*/
+      return /*fetch the person from network*/
     }
   }
 }
@@ -174,7 +175,7 @@ extension MyService {
 >
 > *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
 >
-> So we've dispatched execution of "fetch person from network" and returned future.
+> So we've dispatched execution of "fetch the person from network" and returned future.
 >
 
 ```swift
@@ -230,7 +231,7 @@ So here is the scenario:
 
 1. User presses button "Refresh Person Info"
 2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
-3. `MyService` starts to fetch person from network
+3. `MyService` starts to fetch the person from network
 4. There are some network issues
 5. User does not want to wait for too long, so he/she is just closing window/popover/modal view/anything
 6. The owner of `MyViewController` does not need the view controller anymore. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
@@ -257,7 +258,7 @@ extension MyService {
         return
       }
 
-      let person = /*fetch person from network*/
+      let person = /*fetch the person from network*/
 
       /* do not forget to add call of callback here */
       callback(person, nil)
@@ -316,7 +317,7 @@ extension MyService {
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
 
-      return /*fetch person from network*/
+      return /*fetch the person from network*/
     }
   }
 }
@@ -432,7 +433,7 @@ Okay. So now we know all of the details. Let's continue with implementation of p
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(context: self) { (self) in
-      return /*fetch person from network*/
+      return /*fetch the person from network*/
     }
   }
 }

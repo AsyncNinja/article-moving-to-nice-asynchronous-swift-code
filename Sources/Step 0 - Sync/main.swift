@@ -40,7 +40,7 @@ extension MyService : PersonsProviderSync {
 extension MyViewController {
   func present(personWithID identifier: String) {
 
-    /* do not forget to dispatch to background */
+    /* do not forget to dispatch to background queue */
     DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
