@@ -216,7 +216,7 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see [Revealing Danger](#revealing-danger)*
+* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
 
@@ -286,7 +286,7 @@ extension MyViewController {
   }
 }
 ```
-This solution definitely fixes described issue but does not meet our [Goals for New Approaches](#goals-for-new-approaches).
+This solution definitely fixes described issue but does not meet our [goals](#goals-for-new-approaches).
 
 **Pros**
 
