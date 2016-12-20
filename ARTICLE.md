@@ -150,7 +150,7 @@ extension MyViewController {
 ## Attempt 2.0 - Futures
 Let's try one more approach. Idea [futures](https://en.wikipedia.org/wiki/Futures_and_promises) has involved separately. But combination with closures improves futures much.
 
-This is more advanced approach then previous one. So make sure that you read explanation below code if you unfamiliar with this idea.
+This is more advanced approach than previous one. So make sure that you read explanations below code if you are unfamiliar with this idea.
 
 ```swift
 extension MyService {
@@ -162,7 +162,7 @@ extension MyService {
 }
 ```
 
-This interface is almost as good as synchronous version. 
+This interface is almost as good as a synchronous version. 
 
 >
 > Short explanation of what has happened.
@@ -202,7 +202,7 @@ extension MyViewController {
 >
 > Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`
 > With line `.onComplete(executor: .main) {` we specified reaction on completion of the future.
-> `executor: main` means specified closure will be executed on main executor aka main queue.
+> `executor: main` means specified closure will be executed on the main executor aka main queue.
 > This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
 > except it has case `.failure(Error)` instead of `.none`
 > So by switching between two available cases we are either presenting a person or presenting an error.
@@ -426,7 +426,7 @@ extension MyViewController {
 >
 
 So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
-encapsulates 99% of this complexity. This must help you to reduce amount of boilerplate code.
+encapsulates 99% of this complexity. This must help you to reduce an amount of boilerplate code.
 Just conform your active object to `ExecutionContext` and use futures safely.
 [AsyncNinja](http://async.ninja/) provides conformance to `ExecutionContext`
 for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc.
@@ -455,7 +455,7 @@ visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
 ## Further Improvements
 Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
 
-Scala for example has this kind of sintactic sugar for futures. Here is an example of combining futures in scala:
+Scala for example has this kind of syntactic sugar for futures. Here is an example of combining futures in scala:
 
 ```scala
 val futureA = Future{...}
