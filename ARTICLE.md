@@ -15,6 +15,7 @@ and to provide examples solving such problems in a context of programming on Swi
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
+* [Further Improvements](#further-improvements)
 
 ## Let's describe a sample problem
 
@@ -450,3 +451,30 @@ I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
 
 If you want to take a deeper look at sample code or experiment yourself
 visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
+
+## Further Improvements
+Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
+
+Scala for example has this kind of sintactic sugar for futures. Here is an example of combining futures in scala:
+
+```scala
+val futureA = Future{...}
+val futureB = Future{...}
+val futureC = Future{...}
+
+val futureABC = for{
+  resultA <- futureA
+  resultB <- futureB
+  resultC <- futureC
+} yield (resultA, resultB, resultC)
+```
+
+I personally do not see advantage (maybe just yet). With [AsyncNinja](http://async.ninja/) you can do this:
+
+```swift
+let futureA: Future<ResultA> = /* ... */
+let futureB: Future<ResultB> = /* ... */
+let futureC: Future<ResultC> = /* ... */
+
+let futureABC = zip(futureA, futureB, futureC)
+```
