@@ -14,6 +14,9 @@ and to provide examples solving such problems in a context of programming on Swi
 * [Bugfix 1.1 - Async with Callbacks (full story)](#bugfix-11---async-with-callbacks-full-story)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
+	* [Assumptions](#assumptions)
+	* [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
+	* [Back to Solution](#back-to-solution)
 * [Summary](#summary)
 * [Further Improvements](#further-improvements)
 
@@ -359,6 +362,7 @@ We have [goals](#goals-for-new-approaches) to achieve, so we must to move forwar
 ## Refactoring 2.2 - Futures and ExecutionContext
 Let's make a few assumptions before we explore this approach.
 
+#### Assumptions
 1. for `MyService`
     * `MyService` is an active object that has mutable state
     * This state is allowed to change only on serial queue owned by `MyService`
@@ -374,6 +378,55 @@ Let's make a few assumptions before we explore this approach.
 So I conclude that `MyService` and `MyViewController` can be conformed to
 protocol `ExecutionContext` from [AsyncNinja](http://async.ninja/) library.
 That basically means that they can asynchronously execute code that influences their lifetime and internal state.
+
+#### Diving into AsyncNinja Implementation
+For the further explanation, we'll have to discuss details of [AsyncNinja](http://async.ninja/)'s implementation for a bit. So `ExecutionContext` protocol looks like this:
+
+```swift
+public protocol ExecutionContext : class {
+  var executor: Executor { get }
+  func releaseOnDeinit(_ object: AnyObject)
+  func notifyDeinit(_ block: @escaping () -> Void)
+}
+```
+You'll have to have `func releaseOnDeinit(_ object: AnyObject)` and `func notifyDeinit(_ block: @escaping () -> Void)`
+methods in order to memory management features. But implementing those for each `ExecutionContext` is a boilerplate code too.
+So you can just use another handy protocol that provides implementation of methods for those who have `ReleasePool` instance.
+
+*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s will retain objects until you call `func drain()`.*
+
+```swift
+public protocol ReleasePoolOwner {
+  var releasePool: ReleasePool { get }
+}
+```
+
+I agree that it might seem complicated. But do not have to rethink/write this each time.
+Let's take a look at the code that you actually have to right in order to conform to `ExecutionContext`:
+
+```swift
+class MyService : ExecutionContext, ReleasePoolOwner {
+  /* own serial queue */
+  let internalQueue = DispatchQueue(label: "my-service-queue")
+  
+  /* present internal queue as executor */
+  var executor: Executor { return .queue(self.internalQueue) }
+
+  /* own release pool */
+  let releasePool = ReleasePool()
+    
+  /* implementation */
+}
+```
+
+That is it. Three additional lines that you will not forget thanks to Swift's types safety.
+
+[AsyncNinja](http://async.ninja/) also provides conformance to `ExecutionContext`
+for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc,
+so there is no need to conform `MyViewController` to `ExecutionContext` manually.
+
+#### Back to Solution
+Okay. So now we know all of the details. Let's continue with implementation of person fetching and presentation.
 
 ```swift
 extension MyService {
@@ -426,8 +479,6 @@ extension MyViewController {
 So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
 encapsulates 99% of this complexity. This must help you to reduce an amount of boilerplate code.
 Just conform your active object to `ExecutionContext` and use futures safely.
-[AsyncNinja](http://async.ninja/) also provides conformance to `ExecutionContext`
-for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc.
 
 **Pros**
 
