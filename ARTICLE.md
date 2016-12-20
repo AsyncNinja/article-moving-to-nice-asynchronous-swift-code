@@ -152,7 +152,9 @@ extension MyViewController {
 * *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
 ## Attempt 2.0 - Futures
-Let’s try one more approach. Idea [futures](https://en.wikipedia.org/wiki/Futures_and_promises) has involved separately. It is a great. In combination with closures makes this approach even more powerful.
+Let’s try one more approach. Idea futures has involved separately. It is a great. In combination with closures makes this approach even more powerful.
+
+> <[wikipedia](https://en.wikipedia.org/wiki/Futures_and_promises)> ... (futures) describe an object that acts as a proxy for a result that is initially unknown, usually because the computation of its value is yet incomplete.
 
 This is more advanced approach than previous one. So make sure that you read explanations below code if you are unfamiliar with this idea.
 
@@ -170,8 +172,9 @@ extension MyService {
 > Short explanation of what has happened.
 >
 > Call of function `future(executor: ...) { ... }` does two things
+>
 > 1. returns `Future<Person>`
-> 2. asynchronously executes closure on specified *executor*. Returting value from the closure will cause future to complete
+> 2. asynchronously executes closure on specified *executor*. Returning value from the closure will cause future to complete
 >
 > *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
 >
@@ -223,6 +226,8 @@ extension MyViewController {
 * *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
+
+***
 
 ## Revealing Danger
 Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
@@ -359,6 +364,8 @@ Nope. It does not look better.
 
 Unfortunately, all libraries I've seen that provide futures for Swift finish here.
 We have [goals](#goals-for-new-approaches) to achieve, so we must to move forward.
+
+***
 
 ## Refactoring 2.2 - Futures and ExecutionContext
 Let's make a few assumptions before we explore this approach.
