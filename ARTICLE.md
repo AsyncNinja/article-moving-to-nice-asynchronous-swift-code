@@ -1,6 +1,6 @@
-# Steps Towards Nice Asynchronous Code
+# Steps Towards Nice Asynchronous Swift Code
 This article is made to raise awareness about problems related to asynchronous code
-and to provide examples solving such problems in a context of programming on Swift 3.0.
+and to provide examples solving such problems.
 
 ### Contents
 * [Description of a sample problem](#description-of-a-sample-problem)
