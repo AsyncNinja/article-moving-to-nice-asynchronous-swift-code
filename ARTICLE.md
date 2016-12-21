@@ -119,7 +119,8 @@ It looked pure*ish*, but now it is not. Let's see how we will use this interface
 ```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
-    self.myService.person(identifier: identifier) { (person, error) in
+    self.myService.person(identifier: identifier) {
+      (person, error) in
 
 	  /* do not forget to dispatch to main */
       DispatchQueue.main.async {
@@ -161,7 +162,7 @@ This is more advanced approach than previous one. So make sure that you read exp
 ```swift
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
-    return future(executor: .queue(self.internalQueue)) { _ in
+    return future(executor: .queue(self.internalQueue)) {
       return /*fetch the person from network*/
     }
   }
@@ -535,3 +536,10 @@ let futureC: Future<ResultC> = /* ... */
 
 let futureABC = zip(futureA, futureB, futureC)
 ```
+
+***
+
+I thank everyone who reached down here. You are awesome!
+
+I want to give a shout-out to [MacPaw](https://macpaw.com) for helping me with editing and implementing these ideas.
+We will use these findings in next update of [Gemini](https://macpaw.com/gemini) so stay tuned.

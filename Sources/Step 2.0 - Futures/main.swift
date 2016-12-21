@@ -28,7 +28,7 @@ import AsyncNinja
 // implementation PersonsProvider<...> in MyService
 extension MyService : PersonsProviderOnFutures {
   public func person(identifier: String) -> Future<Person?> {
-    return future(executor: .queue(self.internalQueue)) { _ in
+    return future(executor: .queue(self.internalQueue)) {
       return self.storage.person(identifier: identifier)
     }
   }

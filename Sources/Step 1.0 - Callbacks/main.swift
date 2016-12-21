@@ -57,7 +57,8 @@ extension MyService : PersonsProviderOnCallbacks {
 // example of usage in UI-related class
 extension MyViewController {
   func present(personWithID identifier: String) {
-    self.myService.person(identifier: identifier) { (person, error) in
+    self.myService.person(identifier: identifier) {
+      (person, error) in
 
       /* do not forget to dispatch to main */
       DispatchQueue.main.async {
