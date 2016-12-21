@@ -13,9 +13,9 @@ and to provide examples solving such problems.
 * [Bugfix 1.1 - Async with Callbacks (full story)](#bugfix-11---async-with-callbacks-full-story)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
-	* [Assumptions](#assumptions)
-	* [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
-	* [Back to Solution](#back-to-solution)
+    * [Assumptions](#assumptions)
+    * [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
+    * [Back to Solution](#back-to-solution)
 * [Summary](#summary)
 * [Further Improvements](#further-improvements)
 
@@ -48,7 +48,7 @@ That's how it looks if used:
 extension MyViewController {
   func present(personWithID identifier: String) {
 
-	/* do not forget to dispatch to background queue */
+    /* do not forget to dispatch to background queue */
     DispatchQueue.global().async {
       do {
         let person = try self.myService.person(identifier: identifier)
@@ -122,7 +122,7 @@ extension MyViewController {
     self.myService.person(identifier: identifier) {
       (person, error) in
 
-	  /* do not forget to dispatch to main */
+      /* do not forget to dispatch to main */
       DispatchQueue.main.async {
 
         if let error = error {
@@ -187,7 +187,7 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
 
-	  /* do not forget to dispatch to main */
+      /* do not forget to dispatch to main */
       .onComplete(executor: .main) {
         (personOrError) -> Void in
 
@@ -254,12 +254,12 @@ The usual fix involves adding `weak`s all over the place.
 extension MyService {
   func person(identifier: String,
               callback: @escaping (Person?, Error?) -> Void) {
-	
-	/* do not forget weak self */
+
+    /* do not forget weak self */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
 
-      	/* do not forget to add call of callback here */
+        /* do not forget to add call of callback here */
         callback(nil, ModelError.serviceIsMissing)
         return
       }
@@ -282,7 +282,7 @@ extension MyViewController {
       /* do not forget to dispatch to main */
       DispatchQueue.main.async {
 
-		/* do not forget weak self */
+        /* do not forget weak self */
         [weak self] in
         guard let strongSelf = self else { return }
 
