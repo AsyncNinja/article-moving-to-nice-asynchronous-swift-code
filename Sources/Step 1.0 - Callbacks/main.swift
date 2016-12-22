@@ -60,7 +60,7 @@ extension MyViewController {
     self.myService.person(identifier: identifier) {
       (person, error) in
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
 
         if let error = error {

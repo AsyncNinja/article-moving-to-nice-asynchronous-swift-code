@@ -47,7 +47,7 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       .onComplete(executor: .main) {
         (personOrError) -> Void in
 

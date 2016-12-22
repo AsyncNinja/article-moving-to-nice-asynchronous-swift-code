@@ -79,7 +79,7 @@ extension MyViewController {
       /* do not forget weak self */
       [weak self] (person, error) in
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
 
         /* do not forget weak self */

@@ -45,13 +45,13 @@ extension MyViewController {
       do {
         let person = try self.myService.person(identifier: identifier)
 
-        /* do not forget to dispatch to main */
+        /* do not forget to dispatch to the main queue */
         DispatchQueue.main.async {
           self.present(person: person)
         }
       } catch {
 
-        /* do not forget to dispatch to main */
+        /* do not forget to dispatch to the main queue */
         DispatchQueue.main.async {
           self.present(error: error)
         }

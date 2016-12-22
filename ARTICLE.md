@@ -56,13 +56,13 @@ extension MyViewController {
       do {
         let person = try self.myService.person(identifier: identifier)
 
-        /* do not forget to dispatch to main */
+        /* do not forget to dispatch to the main queue */
         DispatchQueue.main.async {
           self.present(person: person)
         }
       } catch {
 
-        /* do not forget to dispatch to main */
+        /* do not forget to dispatch to the main queue */
         DispatchQueue.main.async {
           self.present(error: error)
         }
@@ -71,7 +71,8 @@ extension MyViewController {
   }
 }
 ```
-Usage of the method does not look as beautiful as interface.
+
+As you see, usage of this method doesn’t look as beautiful as the interface.
 
 ### A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
@@ -137,7 +138,7 @@ extension MyViewController {
     self.myService.person(identifier: identifier) {
       (person, error) in
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
 
         if let error = error {
@@ -204,7 +205,7 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       .onComplete(executor: .main) {
         (personOrError) -> Void in
 
@@ -298,7 +299,7 @@ extension MyViewController {
       /* do not forget weak self */
       [weak self] (person, error) in
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
 
         /* do not forget weak self */
@@ -353,7 +354,7 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
 
-      /* do not forget to dispatch to main */
+      /* do not forget to dispatch to the main queue */
       .onComplete(executor: .main) {
 
         /* do not forget weak self */
