@@ -4,19 +4,18 @@ and to provide examples solving such problems.
 
 ---
 
-### Agends
+### Agenda
 * [Description of a sample problem](#description-of-a-sample-problem)
 * [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
-* [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
-* [Goals for New Approaches](#goals-for-new-approaches)
+* [Goals for new approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
-* [Revealing Danger](#revealing-danger)
+* [Revealing danger](#revealing-danger)
 * [Bugfix 1.1 - Async with Callbacks (full story)](#bugfix-11---async-with-callbacks-full-story)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
-* [Further Improvements](#further-improvements)
+* [Further improvements](#further-improvements)
 
 ---
 
@@ -73,24 +72,11 @@ extension MyViewController {
   }
 }
 ```
+Usage of the method does not look as beautiful as interface.
 
 ---
 
-## Summary: Synchronous Approach
-
-**Pros**
-
-* `MyService` interface and implementation looks simple
-
-**Cons**
-
-* possibility of deadlocks in `MyService`
-* "do not forget" **x3**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
-
----
-
-## A word about the "do not forget" comment
+### A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
 some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
@@ -101,7 +87,34 @@ And we did not even think of possible deadlocks in `MyService` yet!
 
 ---
 
-## Goals for New Approaches
+### A word about deadlocks
+[Deadlock](https://en.wikipedia.org/wiki/Deadlock) is a nightmare programming.
+They will occur in the most sudden places, under the most unbelievable circumstances
+and (from my own experience) 80% of them will be revealed in production.
+
+The code above is synchronous from the perspective of `MyService`. To perform `func person(identifier: String) throws -> Person?`
+we'll have to lock at least two times. Real world problems massively increase the complexity of such cases.
+
+There are have two possible solutions: be 100% attentive and careful or do not use an approach that has such massive issues.
+As you could have assumed we are going to explore option #2.
+
+---
+
+### Summary: Synchronous Approach
+
+**Pros**
+
+* `MyService` interface and implementation looks simple
+
+**Cons**
+
+* possibility of deadlocks in `MyService`
+* "do not forget" **x3**
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
+
+---
+
+## Goals for new approaches
 So let's try to fix issues of this approach. So new approaches have to meet goals:
 
 * avoid possibility of deadlocks
@@ -114,10 +127,12 @@ So let's try to fix issues of this approach. So new approaches have to meet goal
 Since OS X 10.6 and iOS 4.0 we had closures (aka blocks).
 Using closures as callback opens another dimension in making asynchronous flows.
 
+---
+
 ```swift
 extension MyService {
    func person(identifier: String,
-               callback: @escaping (Person?, Error?) -> Void) {
+         callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = /*fetch the person from network*/
 
@@ -129,11 +144,11 @@ extension MyService {
 ```
 
 So we are passing callback as last argument. This interface is a little bit uglier.
-It looked pure*ish*, but now it is not.
+It looked pure*ish*, but now it is not. Let's see how we will use this interface.
 
 ---
 
-Let's see how we will use this interface.
+Usage:
 
 ```swift
 extension MyViewController {
@@ -158,7 +173,7 @@ extension MyViewController {
 
 ---
 
-## Summary: Attempt 1.0 - Async with Callbacks
+### Summary: Attempt 1.0 - Async with Callbacks
 
 **Pros**
 
@@ -170,7 +185,7 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
 ---
 
@@ -200,7 +215,7 @@ extension MyService {
 >
 > Call of function `future(executor: ...) { ... }` does two things
 >
-> 1. returns `Future<Person>`
+> 1. returns `Future<Person?>`
 > 2. asynchronously executes closure on specified *executor*. Returning value from the closure will cause future to complete
 >
 > *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
@@ -236,7 +251,7 @@ extension MyViewController {
 >
 > Short explanation of what has happened.
 >
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
 > With line `.onComplete(executor: .main) {` we've specified reaction on completion of the future.
 > `executor: main` means that specified closure will be executed on the main executor aka main queue.
 > This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
@@ -246,7 +261,7 @@ extension MyViewController {
 
 ---
 
-## Summary: Attempt 2.0 - Futures
+### Summary: Attempt 2.0 - Futures
 
 **Pros**
 
@@ -258,13 +273,13 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
 
 ---
 
-## Revealing Danger
+## Revealing danger
 Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
 are aware of queues, dispatches, threads and etc.
 
@@ -291,10 +306,12 @@ We have to fix this because memory and CPU resources are limited.
 ## Bugfix 1.1 - Async with Callbacks (full story)
 The usual fix involves adding `weak`s all over the place.
 
+---
+
 ```swift
 extension MyService {
   func person(identifier: String,
-              callback: @escaping (Person?, Error?) -> Void) {
+        callback: @escaping (Person?, Error?) -> Void) {
 
     /* do not forget weak self */
     self.internalQueue.async { [weak self] in
@@ -320,6 +337,7 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
+
       /* do not forget weak self */
       [weak self] (person, error) in
 
@@ -340,11 +358,14 @@ extension MyViewController {
   }
 }
 ```
+
+---
+
 This solution definitely fixes described issue but does not meet our [goals](#goals-for-new-approaches).
 
 ---
 
-## Summary: Bugfix 1.1 - Async with Callbacks (full story)
+### Summary: Bugfix 1.1 - Async with Callbacks (full story)
 
 **Pros**
 
@@ -360,8 +381,10 @@ This solution definitely fixes described issue but does not meet our [goals](#go
 
 ---
 
-## Summary: Bugfix 2.1 - Futures (full story)
+## Bugfix 2.1 - Futures (full story)
 Let's apply the fix to futures-based approach. Maybe it will look better here.
+
+---
 
 ```swift
 extension MyService {
@@ -408,7 +431,7 @@ Nope. It does not look better.
 
 ---
 
-## Bugfix 2.1 - Futures (full story)
+### Summary: Bugfix 2.1 - Futures (full story)
 
 **Pros**
 
@@ -424,7 +447,7 @@ Nope. It does not look better.
 ---
 
 Unfortunately, all libraries I've seen that provide futures for Swift finish here.
-We have [goals](#goals-for-new-approaches) to achieve, so we must to move forward.
+We have [goals](#goals-for-new-approaches) to achieve, so we must move forward.
 
 ---
 
@@ -433,21 +456,22 @@ Let's make a few assumptions before we explore this approach.
 
 ---
 
-##### for `MyService`
-
-* `MyService` is an active object that has mutable state
-* This state is allowed to change only on serial queue owned by `MyService`
-* `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
-* `MyService` communicates with other active objects predominantly using asynchronous calls
+### Assumptions
+#### for `MyService`
+    * `MyService` is an active object that has mutable state
+    * This state is allowed to change only on serial queue owned by `MyService` (in oppose to locks in synchronous approach)
+    * `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
+    * `MyService` communicates with other active objects predominantly using asynchronous calls
 
 ---
 
+### Assumptions
 #### for `MyViewController`
-* `MyViewController` is an active object that has mutable state (UI)
-* This state is allowed to change only on the main queue
-* `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
-* `MyViewController` communicates with another UI related classes predominantly on the main queue 
-* `MyViewController` communicates with other active objects predominantly using asynchronous calls
+    * `MyViewController` is an active object that has mutable state (UI)
+    * This state is allowed to change only on the main queue (in oppose to locks in synchronous approach)
+    * `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
+    * `MyViewController` communicates with another UI related classes predominantly on the main queue 
+    * `MyViewController` communicates with other active objects predominantly using asynchronous calls
 
 ---
 
@@ -457,7 +481,7 @@ That basically means that they can asynchronously execute code that influences t
 
 ---
 
-#### Diving into AsyncNinja Implementation
+### Diving into AsyncNinja Implementation
 For the further explanation, we'll have to discuss details of [AsyncNinja](http://async.ninja/)'s implementation for a bit. So `ExecutionContext` protocol looks like this:
 
 ```swift
@@ -473,30 +497,25 @@ public protocol ExecutionContext : class {
 You'll have to have `func releaseOnDeinit(_ object: AnyObject)` and `func notifyDeinit(_ block: @escaping () -> Void)`
 methods in order to memory management features. But implementing those for each `ExecutionContext` is a boilerplate code too.
 So you can just use another handy protocol that provides implementation of methods for those who have `ReleasePool` instance.
-
-*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s will retain objects until you call `func drain()`.*
+*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s primitive. It will retain objects until you call `func drain()`.*
 
 ---
-
-```swift
-public protocol ReleasePoolOwner {
-  var releasePool: ReleasePool { get }
-}
-```
 
 I agree that it might seem complicated. But do not have to rethink/write this each time.
+Let's take a look at the code that you actually have to right in order to conform to `ExecutionContext`.
 
 ---
-
-Let's take a look at the code that you actually have to right in order to conform to `ExecutionContext`:
 
 ```swift
 class MyService : ExecutionContext, ReleasePoolOwner {
   /* own serial queue */
-  let internalQueue = DispatchQueue(label: "my-service-queue")
+  let internalQueue =
+    DispatchQueue(label: "my-service-queue")
   
   /* present internal queue as executor */
-  var executor: Executor { return .queue(self.internalQueue) }
+  var executor: Executor {
+    return .queue(self.internalQueue)
+  }
 
   /* own release pool */
   let releasePool = ReleasePool()
@@ -505,7 +524,7 @@ class MyService : ExecutionContext, ReleasePoolOwner {
 }
 ```
 
-That is it. Three additional lines that you will not forget thanks to Swift's types safety.
+That is it. A few additional lines that you will not forget thanks to Swift's types safety.
 
 ---
 
@@ -530,6 +549,7 @@ extension MyService {
 
 ---
 
+>
 > Short explanation of what has happened.
 >
 > `MyService` as mentioned before conforms to `ExecutionContext`. This allows us to call
@@ -545,7 +565,8 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onComplete(context: self) { (self, personOrError) in
+      .onComplete(context: self) {
+        (self, personOrError) in
 
         switch personOrError {
         case .success(let person):
@@ -565,7 +586,7 @@ extension MyViewController {
 > Short explanation of what has happened.
 >
 > `MyViewController` as mentioned before conforms to `ExecutionContext`.
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
 > With line `.onComplete(context: self) {` we've specified reaction on completion of the future.
 > `context: self` means that specified closure will be executed on `ExecutionContext`'s
 > executor (main queue in this case) if context is still alive.
@@ -580,7 +601,7 @@ Just conform your active object to `ExecutionContext` and use futures safely.
 
 ---
 
-## Summary: Refactoring 2.2 - Futures and ExecutionContext
+### Summary: Refactoring 2.2 - Futures and ExecutionContext
 
 **Pros**
 
@@ -604,11 +625,12 @@ I love to pick between multiple variants using math. So:
 Looks like our attempt to achieve all [goals](#goals-for-new-approaches) completed successfully.
 I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
 
-If you want to take a deeper look at sample code or experiment yourself visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
+If you want to take a deeper look at sample code or experiment yourself
+visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
 
 ---
 
-## Further Improvements
+## Further improvements
 Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
 
 ---
@@ -627,9 +649,11 @@ val futureABC = for{
 } yield (resultA, resultB, resultC)
 ```
 
+I personally do not see advantage (maybe just yet).
+
 ---
 
-I personally do not see advantage (maybe just yet). With [AsyncNinja](http://async.ninja/) you can do this:
+With [AsyncNinja](http://async.ninja/) you can do this:
 
 ```swift
 let futureA: Future<ResultA> = /* ... */

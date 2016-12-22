@@ -5,8 +5,9 @@ and to provide examples solving such problems.
 ### Contents
 * [Description of a sample problem](#description-of-a-sample-problem)
 * [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
-* [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
-* [A word about deadlocks](#a-word-about-deadlocks)
+	* [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
+	* [A word about deadlocks](#a-word-about-deadlocks)
+	* [Summary: Synchronous approach](#summary-synchronous-approach)
 * [Goals for new approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
@@ -17,6 +18,7 @@ and to provide examples solving such problems.
     * [Assumptions](#assumptions)
     * [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
     * [Back to Solution](#back-to-solution)
+    * [Summary: Refactoring 2.2 - Futures and ExecutionContext](#summary-refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
 * [Further improvements](#further-improvements)
 
@@ -71,17 +73,7 @@ extension MyViewController {
 ```
 Usage of the method does not look as beautiful as interface.
 
-**Pros**
-
-* `MyService` interface and implementation looks simple
-
-**Cons**
-
-* possibility of deadlocks in `MyService`
-* "do not forget" **x3**
-* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
-
-## A word about the "do not forget" comment
+### A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
 some kind of robot that avoids mistakes in 99% of cases, application with 100
 of such calls will have at least one critical issue.
@@ -90,7 +82,7 @@ In more realistic conditions such calls are often nested or parallelized
 that the triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
 
-## A word about deadlocks
+### A word about deadlocks
 [Deadlock](https://en.wikipedia.org/wiki/Deadlock) is a nightmare programming.
 They will occur in the most sudden places, under the most unbelievable circumstances
 and (from my own experience) 80% of them will be revealed in production.
@@ -100,6 +92,17 @@ we'll have to lock at least two times. Real world problems massively increase th
 
 There are have two possible solutions: be 100% attentive and careful or do not use an approach that has such massive issues.
 As you could have assumed we are going to explore option #2.
+
+### Summary: Synchronous approach
+**Pros**
+
+* `MyService` interface and implementation looks simple
+
+**Cons**
+
+* possibility of deadlocks in `MyService`
+* "do not forget" **x3**
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
 ## Goals for new approaches
 So let's try to fix issues of this approach. So new approaches have to meet goals:
@@ -151,6 +154,8 @@ extension MyViewController {
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) raised :(
 
 *For those who see the urge to add `weaks` all over the place. Go to "[Revealing danger](#revealing-danger)" paragraph*
+
+### Summary: Attempt 1.0 - Async with Callbacks
 
 **Pros**
 
@@ -225,6 +230,8 @@ extension MyViewController {
 > except it has case `.failure(Error)` instead of `.none`
 > So by switching between two available cases we are either presenting a person (`Person`) or presenting an error.
 >
+
+### Summary: Attempt 2.0 - Futures
 
 **Pros**
 
@@ -310,6 +317,8 @@ extension MyViewController {
 ```
 This solution definitely fixes described issue but does not meet our [goals](#goals-for-new-approaches).
 
+### Summary: Bugfix 1.1 - Async with Callbacks (full story)
+
 **Pros**
 
 * removes hidden danger
@@ -364,6 +373,8 @@ extension MyViewController {
 ```
 Nope. It does not look better.
 
+### Summary: Bugfix 2.1 - Futures (full story)
+
 **Pros**
 
 * removes hidden danger
@@ -383,7 +394,7 @@ We have [goals](#goals-for-new-approaches) to achieve, so we must move forward.
 ## Refactoring 2.2 - Futures and ExecutionContext
 Let's make a few assumptions before we explore this approach.
 
-#### Assumptions
+### Assumptions
 1. for `MyService`
     * `MyService` is an active object that has mutable state
     * This state is allowed to change only on serial queue owned by `MyService` (in oppose to locks in synchronous approach)
@@ -400,7 +411,7 @@ So I conclude that `MyService` and `MyViewController` can be conformed to
 protocol `ExecutionContext` from [AsyncNinja](http://async.ninja/) library.
 That basically means that they can asynchronously execute code that influences their lifetime and internal state.
 
-#### Diving into AsyncNinja Implementation
+### Diving into AsyncNinja Implementation
 For the further explanation, we'll have to discuss details of [AsyncNinja](http://async.ninja/)'s implementation for a bit. So `ExecutionContext` protocol looks like this:
 
 ```swift
@@ -414,7 +425,7 @@ You'll have to have `func releaseOnDeinit(_ object: AnyObject)` and `func notify
 methods in order to memory management features. But implementing those for each `ExecutionContext` is a boilerplate code too.
 So you can just use another handy protocol that provides implementation of methods for those who have `ReleasePool` instance.
 
-*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s will retain objects until you call `func drain()`.*
+*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s primitive. It will retain objects until you call `func drain()`.*
 
 ```swift
 public protocol ReleasePoolOwner {
@@ -446,7 +457,7 @@ That is it. Three additional lines that you will not forget thanks to Swift's ty
 for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc,
 so there is no need to conform `MyViewController` to `ExecutionContext` manually.
 
-#### Back to Solution
+### Back to Solution
 Okay. So now we know all of the details. Let's continue with implementation of person fetching and presentation.
 
 ```swift
@@ -472,7 +483,8 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
-      .onComplete(context: self) { (self, personOrError) in
+      .onComplete(context: self) {
+        (self, personOrError) in
 
         switch personOrError {
         case .success(let person):
@@ -500,6 +512,8 @@ extension MyViewController {
 So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
 encapsulates 99% of this complexity. This must help you to reduce an amount of boilerplate code.
 Just conform your active object to `ExecutionContext` and use futures safely.
+
+### Summary: Refactoring 2.2 - Futures and ExecutionContext
 
 **Pros**
 
