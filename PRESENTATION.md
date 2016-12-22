@@ -111,7 +111,7 @@ we are going to explore option #2.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hidden danger (see "[Revealing danger](#revealing-danger)"*)
+* *hidden danger (see "[Revealing danger](#revealing-danger))"*)
 
 ---
 
@@ -186,7 +186,7 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see (see "[Revealing danger](#revealing-danger)*
+* *hides danger, see "[Revealing danger](#revealing-danger)"*
 
 ---
 
@@ -279,7 +279,7 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see (see "[Revealing danger](#revealing-danger)*
+* *hides danger, see "[Revealing danger](#revealing-danger)"*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
 

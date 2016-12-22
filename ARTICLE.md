@@ -105,7 +105,7 @@ we are going to explore option #2.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hidden danger (see "[Revealing danger](#revealing-danger)"*)
+* *hidden danger (see "[Revealing danger](#revealing-danger))"*)
 
 ## Acceptance Criteria for New Approaches
 Now, let's try to find a new coding approach that eliminates all the issues
@@ -159,7 +159,7 @@ extension MyViewController {
 ```
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) raised :(
 
-*For those who see the urge to add `weaks` all over the place. Go to (see "[Revealing danger](#revealing-danger)*
+*For those who see the urge to add `weaks` all over the place. Go to "[Revealing danger](#revealing-danger)"*
 
 ### Summary: Attempt 1.0. Async with Callbacks
 
@@ -173,7 +173,7 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see (see "[Revealing danger](#revealing-danger)*
+* *hides danger, see "[Revealing danger](#revealing-danger)"*
 
 ## Attempt 2.0. Futures
 Let's try one more approach. Idea futures has involved separately. It is a great.
@@ -254,7 +254,7 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see (see "[Revealing danger](#revealing-danger)*
+* *hides danger, see "[Revealing danger](#revealing-danger)"*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
 
