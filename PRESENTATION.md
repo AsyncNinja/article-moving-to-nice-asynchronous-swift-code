@@ -111,7 +111,7 @@ we are going to explore option #2.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hidden danger (see "[Revealing danger](#revealing-danger))"*)
+* *hidden danger, see "[Revealing danger](#revealing-danger)"*)
 
 ---
 

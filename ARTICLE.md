@@ -105,7 +105,7 @@ we are going to explore option #2.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hidden danger (see "[Revealing danger](#revealing-danger))"*)
+* *hidden danger, see "[Revealing danger](#revealing-danger)"*
 
 ## Acceptance Criteria for New Approaches
 Now, let's try to find a new coding approach that eliminates all the issues
