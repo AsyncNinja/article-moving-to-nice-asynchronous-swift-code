@@ -93,7 +93,7 @@ And we did not even think of possible deadlocks in `MyService` yet!
 They will occur in the most sudden places, under the most unbelievable circumstances
 and (from my own experience) 80% of them will be revealed in production.
 
-The code above is synchronous from the perspective of `MyService`. To perform `func person(identifier: String) throws -> Person?`
+The code above is synchronous from the perspective of `MyService`. So to perform `func person(identifier: String) throws -> Person?`
 we'll have to lock at least two times. Real world problems massively increase the complexity of such cases.
 
 There are have two possible solutions: be 100% attentive and careful or do not use an approach that has such massive issues.
@@ -126,7 +126,7 @@ So let's try to fix issues of this approach. So new approaches have to meet goal
 
 ## Attempt 1.0 - Async with Callbacks
 Since OS X 10.6 and iOS 4.0 we had closures (aka blocks).
-Using closures as callback opens another dimension in making asynchronous flows.
+Using closures as callback opens up new opportunities in making asynchronous flows.
 
 ---
 
