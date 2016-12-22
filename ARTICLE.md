@@ -384,7 +384,7 @@ extension MyViewController {
 ```
 Nope. It does not look better.
 
-### Bugfix 2.1. Futures (full story)
+### Summary: Bugfix 2.1. Futures (full story)
 
 **Pros**
 
