@@ -72,11 +72,11 @@ extension MyViewController {
 }
 ```
 
-As you see, usage of this method doesn’t look as beautiful as the interface.
+As you see, usage of this method doesn't look as beautiful as the interface.
 
 ### About the "do not forget" comment
 *IMHO*, each *"do not forget"* comment points to a poor architecture. Even if you were
-a robot that could’ve avoid mistakes in 99% of cases, an application with 100
+a robot that could've avoid mistakes in 99% of cases, an application with 100
 of these calls would have at least one critical issue.
 
 In more realistic conditions, such calls are often nested or parallelized,
@@ -89,7 +89,7 @@ that occur in the most unexpected places and under the most unbelievable circums
 Make it worse, I can tell from my own experience that 80% of deadlocks are revealed in production.
 
 The code above is synchronous from the perspective of `MyService`.
-To perform `func person(identifier: String) throws -> Person?`, we must lock at least two times. 
+To perform `func person(identifier: String) throws -> Person?`, we must use a lock at least two times. 
 Thus, real world problems substantially increase the complexity of such cases.
 
 There are two possible solutions: either be 100% attentive and careful
@@ -134,7 +134,7 @@ extension MyService {
 ```
 So, we are passing a callback as the last argument. 
 This interface looks a little bit uglier than the previous one.
-It looked [pure](https://en.wikipedia.org/wiki/Pure_function), but now is not.
+It looked more like a [pure](https://en.wikipedia.org/wiki/Pure_function) function, but now is not.
 Let's check it in-use.
 
 ```swift
