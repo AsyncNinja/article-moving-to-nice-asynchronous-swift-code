@@ -5,11 +5,12 @@ and to provide examples solving such problems.
 ### Contents
 * [Description of a sample problem](#description-of-a-sample-problem)
 * [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
+* [A word about deadlocks](#a-word-about-deadlocks)
 * [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
-* [Goals for New Approaches](#goals-for-new-approaches)
+* [Goals for new approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
-* [Revealing Danger](#revealing-danger)
+* [Revealing danger](#revealing-danger)
 * [Bugfix 1.1 - Async with Callbacks (full story)](#bugfix-11---async-with-callbacks-full-story)
 * [Bugfix 2.1 - Futures (full story)](#bugfix-21---futures-full-story)
 * [Refactoring 2.2 - Futures and ExecutionContext](#refactoring-22---futures-and-executioncontext)
@@ -17,7 +18,7 @@ and to provide examples solving such problems.
     * [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
     * [Back to Solution](#back-to-solution)
 * [Summary](#summary)
-* [Further Improvements](#further-improvements)
+* [Further improvements](#further-improvements)
 
 ## Description of a sample problem
 Here's the source data:
@@ -68,7 +69,7 @@ extension MyViewController {
   }
 }
 ```
-Not as beautiful as interface.
+Usage of the method does not look as beautiful as interface.
 
 **Pros**
 
@@ -78,7 +79,10 @@ Not as beautiful as interface.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
+
+## A word about deadlocks
+TODO
 
 ## A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
@@ -89,7 +93,7 @@ In more realistic conditions such calls are often nested or parallelized
 that the triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
 
-## Goals for New Approaches
+## Goals for new approaches
 So let's try to fix issues of this approach. So new approaches have to meet goals:
 
 * avoid possibility of deadlocks
@@ -138,7 +142,7 @@ extension MyViewController {
 ```
 [Cyclomatic complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) raised :(
 
-*For those who see the urge to add `weaks` all over the place. Go to "[Revealing Danger](#revealing-danger)" paragraph*
+*For those who see the urge to add `weaks` all over the place. Go to "[Revealing danger](#revealing-danger)" paragraph*
 
 **Pros**
 
@@ -150,7 +154,7 @@ extension MyViewController {
 * adds another kind of "do not forget"
 * method output is listed as argument
 * "do not forget" **x2**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
 ## Attempt 2.0 - Futures
 Let's try one more approach. Idea futures has involved separately. It is a great. In combination with closures makes this approach even more powerful.
@@ -224,13 +228,13 @@ extension MyViewController {
 
 * one more library
 * "do not forget" **x2**
-* *hides danger, see "[Revealing Danger](#revealing-danger)" paragraph*
+* *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
 Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
 
 ***
 
-## Revealing Danger
+## Revealing danger
 Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
 are aware of queues, dispatches, threads and etc.
 So here is the scenario:
@@ -364,7 +368,7 @@ Nope. It does not look better.
 * "do not forget" **x3**
 
 Unfortunately, all libraries I've seen that provide futures for Swift finish here.
-We have [goals](#goals-for-new-approaches) to achieve, so we must to move forward.
+We have [goals](#goals-for-new-approaches) to achieve, so we must move forward.
 
 ***
 
@@ -510,7 +514,7 @@ I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
 If you want to take a deeper look at sample code or experiment yourself
 visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
 
-## Further Improvements
+## Further improvements
 Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
 
 Scala for example has syntactic sugar for futures. Here is an example of combining futures in scala:
