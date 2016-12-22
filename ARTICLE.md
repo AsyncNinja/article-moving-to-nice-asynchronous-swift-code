@@ -392,7 +392,8 @@ We have [goals](#goals-for-new-approaches) to achieve, so we must move forward.
 ***
 
 ## Refactoring 2.2 - Futures and ExecutionContext
-Let's make a few assumptions before we explore this approach.
+I’ve been working on concurrency library [AsyncNinja](http://async.ninja/) to achieve these goals.
+So we’ll explore solutions implemented there. But let’s make a few assumptions before we explore this approach.
 
 ### Assumptions
 1. for `MyService`
