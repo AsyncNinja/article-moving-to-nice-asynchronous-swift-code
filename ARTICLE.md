@@ -5,8 +5,8 @@ and to provide examples solving such problems.
 ### Contents
 * [Description of a sample problem](#description-of-a-sample-problem)
 * [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
-* [A word about deadlocks](#a-word-about-deadlocks)
 * [A word about the "do not forget" comment](#a-word-about-the-do-not-forget-comment)
+* [A word about deadlocks](#a-word-about-deadlocks)
 * [Goals for new approaches](#goals-for-new-approaches)
 * [Attempt 1.0 - Async with Callbacks](#attempt-10---async-with-callbacks)
 * [Attempt 2.0 - Futures](#attempt-20---futures)
@@ -81,9 +81,6 @@ Usage of the method does not look as beautiful as interface.
 * "do not forget" **x3**
 * *hides danger, see "[Revealing danger](#revealing-danger)" paragraph*
 
-## A word about deadlocks
-TODO
-
 ## A word about the "do not forget" comment
 *IMHO* each of *"do not forget"*s signalizes about poor architecture.  Even if you are
 some kind of robot that avoids mistakes in 99% of cases, application with 100
@@ -92,6 +89,17 @@ of such calls will have at least one critical issue.
 In more realistic conditions such calls are often nested or parallelized
 that the triples amount of code, complexity, and chances to make mistake.
 And we did not even think of possible deadlocks in `MyService` yet!
+
+## A word about deadlocks
+[Deadlock](https://en.wikipedia.org/wiki/Deadlock) is a nightmare programming.
+They will occur in the most sudden places, under the most unbelievable circumstances
+and (from my own experience) 80% of them will be revealed in production.
+
+The code above is synchronous from the perspective of `MyService`. To perform `func person(identifier: String) throws -> Person?`
+we'll have to lock at least two times. Real world problems massively increase the complexity of such cases.
+
+There are have two possible solutions: be 100% attentive and careful or do not use an approach that has such massive issues.
+As you could have assumed we are going to explore option #2.
 
 ## Goals for new approaches
 So let's try to fix issues of this approach. So new approaches have to meet goals:
@@ -178,7 +186,7 @@ extension MyService {
 >
 > Call of function `future(executor: ...) { ... }` does two things
 >
-> 1. returns `Future<Person>`
+> 1. returns `Future<Person?>`
 > 2. asynchronously executes closure on specified *executor*. Returning value from the closure will cause future to complete
 >
 > *Executor* is an abstraction that basically describes an object that can execute block, e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
@@ -210,7 +218,7 @@ extension MyViewController {
 >
 > Short explanation of what has happened.
 >
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
 > With line `.onComplete(executor: .main) {` we've specified reaction on completion of the future.
 > `executor: main` means that specified closure will be executed on the main executor aka main queue.
 > This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
@@ -378,12 +386,12 @@ Let's make a few assumptions before we explore this approach.
 #### Assumptions
 1. for `MyService`
     * `MyService` is an active object that has mutable state
-    * This state is allowed to change only on serial queue owned by `MyService`
+    * This state is allowed to change only on serial queue owned by `MyService` (in oppose to locks in synchronous approach)
     * `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
     * `MyService` communicates with other active objects predominantly using asynchronous calls
 2. for `MyViewController`
     * `MyViewController` is an active object that has mutable state (UI)
-    * This state is allowed to change only on the main queue
+    * This state is allowed to change only on the main queue (in oppose to locks in synchronous approach)
     * `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
     * `MyViewController` communicates with another UI related classes predominantly on the main queue 
     * `MyViewController` communicates with other active objects predominantly using asynchronous calls
@@ -482,7 +490,7 @@ extension MyViewController {
 > Short explanation of what has happened.
 >
 > `MyViewController` as mentioned before conforms to `ExecutionContext`.
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person>`.
+> Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
 > With line `.onComplete(context: self) {` we've specified reaction on completion of the future.
 > `context: self` means that specified closure will be executed on `ExecutionContext`'s
 > executor (main queue in this case) if context is still alive.
