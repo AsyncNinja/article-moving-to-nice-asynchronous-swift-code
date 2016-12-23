@@ -23,7 +23,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "post-steps-towards-async",
+    name: "article-moving-to-nice-asynchronous-swift-code",
     targets: [
     	Target(
     		name: "Common",
