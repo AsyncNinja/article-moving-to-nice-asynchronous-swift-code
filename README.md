@@ -5,17 +5,17 @@
 
 #### How to run
 ```bash
-git clone https://github.com/AsyncNinja/post-steps-towards-async.git
-cd post-steps-towards-async
+git clone https://github.com/AsyncNinja/article-moving-to-nice-asynchronous-swift-code.git
+cd article-moving-to-nice-asynchronous-swift-code
 ./launch.sh
 ```
 
 #### How to open in Xcode
 ```bash
-git clone https://github.com/AsyncNinja/post-steps-towards-async.git
-cd post-steps-towards-async
+git clone https://github.com/AsyncNinja/article-moving-to-nice-asynchronous-swift-code.git
+cd article-moving-to-nice-asynchronous-swift-code
 swift package generate-xcodeproj
-open post-steps-towards-async.xcodeproj
+open article-moving-to-nice-asynchronous-swift-code.xcodeproj
 ```
 
 Do not forget to provide path to `persons.json` as argument when launching apps from Xcode. [Like this](Resources/how-to-provide-path-to-persons-json-in-xcode.png)
