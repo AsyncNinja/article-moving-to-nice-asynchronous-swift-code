@@ -17,7 +17,7 @@ and provides examples of solving them in the context of programming on Swift 3.0
 * [Refactoring 2.2. Futures and ExecutionContext](#refactoring-22-futures-and-executioncontext)
     * [Assumptions](#assumptions)
     * [Diving into AsyncNinja implementation](#diving-into-asyncninja-implementation)
-    * [Back to Solution](#back-to-solution)
+    * [Going back to the solution](#going-back-to-the-solution)
     * [Summary: Refactoring 2.2. Futures and ExecutionContext](#summary-refactoring-22---futures-and-executioncontext)
 * [Summary](#summary)
 * [Further improvements](#further-improvements)
@@ -203,7 +203,7 @@ extension MyService {
 > 1. Returns `Future<Person?>`
 > 2. Asynchronously executes a closure using the specified *executor*. Returning a value from the closure causes future to be completed.
 >
->The *executor* is an abstraction that basically describes an object that can execute a block,
+> The *executor* is an abstraction that basically describes an object that can execute a block,
 > e.g. `DispatchQueue`, `NSManagedObjectContext`, and so on.
 >
 > So, we've dispatched execution of "fetch the person from the network" and returned the future.
@@ -252,15 +252,16 @@ extension MyViewController {
 **Cons**
 
 * one more library used
-* "do not forget" **x2**
+* "do not forget" **x1**
 * *hidden danger, see "[Revealing danger](#revealing-danger)"*
 
 Both interface and implementation look okay. Nevertheless, both approaches hide some danger. Let's reveal it.
 
-***
+---
 
 ## Revealing danger
-Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that are aware of queues, dispatches, threads, and so on.
+Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are
+*active objects* that are aware of queues, dispatches, threads, and so on.
 So, here is the scenario:
 
 1. A user clicks the "Refresh Person Info" button.
@@ -299,7 +300,9 @@ extension MyService {
     }
   }
 }
+```
 
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
@@ -357,7 +360,9 @@ extension MyService {
     }
   }
 }
+```
 
+```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier)
@@ -395,10 +400,10 @@ Alas, it does not look any better.
 * a new kind of "do not forget" added
 * "do not forget" **x3**
 
-Unfortunately, I couldn’t find a Swift futures library that wouldn’t have finished here.
+Unfortunately, I couldn't find a Swift futures library that wouldn't have finished here.
 Yet, we have [acceptance criteria](#acceptance-criteria-for-new-approaches) to match, and therefore we are moving forward.
 
-***
+---
 
 ## Refactoring 2.2. Futures and ExecutionContext
 I've been working on a concurrency library [AsyncNinja](http://async.ninja/) to achieve these [acceptance criteria](#acceptance-criteria-for-new-approaches).
@@ -431,6 +436,7 @@ public protocol ExecutionContext : class {
   func notifyDeinit(_ block: @escaping () -> Void)
 }
 ```
+
 You must have `func releaseOnDeinit(_ object: AnyObject)` and `func notifyDeinit(_ block: @escaping () -> Void)` methods to memorize management features. However, implementing them for each `ExecutionContext` is a boilerplate code too.
 Thus, you can just use another handy protocol that provides implementation of methods for those objects that have the `ReleasePool` instance.
 
@@ -442,7 +448,7 @@ public protocol ReleasePoolOwner {
 }
 ```
 
-I agree that it might seem complicated, but if you use this library, there’s no need to rethink/write it every time.
+I agree that it might seem complicated, but if you use this library, there's no need to rethink/write it every time.
 Let's take a look at the code that you actually have to write to conform to `ExecutionContext`:
 
 ```swift
@@ -463,7 +469,8 @@ class MyService : ExecutionContext, ReleasePoolOwner {
 That is it. Three additional lines that you will not forget thanks to Swift's types safety.
 
 [AsyncNinja](http://async.ninja/) also provides conformance with `ExecutionContext`
-to obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext`, and so on. Thus, there is no need to conform `MyViewController` to `ExecutionContext` manually.
+to obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext`, and so on.
+Thus, there is no need to conform `MyViewController` to `ExecutionContext` manually.
 
 ### Going back to the solution
 Okay, now we know all details. Let's continue with the implementation of the person fetching and presentation.
@@ -537,12 +544,15 @@ I love to choose between multiple variants using math. So:
 ![Summary](Resources/summary.png)
 *[Summary as Numbers Sheet](Resources/summary.numbers.zip)*
 
-Looks like our attempt to meet all [acceptance criteria](#acceptance-criteria-for-new-approaches) is successful and I hope that you'll find [AsyncNinja](http://async.ninja/) useful too.
+Looks like our attempt to meet all [acceptance criteria](#acceptance-criteria-for-new-approaches) is successful
+and I hope that you'll find [AsyncNinja](http://async.ninja/) useful too.
 
-If you want to take a deeper look at a sample code or try it by yourself, visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
+If you want to take a deeper look at a sample code or try it by yourself,
+visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
 
 ## Further improvements
-Further improvements are possible. This code will look even better with language support (something like `async`, `yield`, etc.), but we are not there yet.
+Further improvements are possible. This code will look even better with language support
+(something like `async`, `yield`, etc.), but we are not there yet.
 
 Scala for example has syntactic sugar for futures. Here is an example of combining futures in scala:
 
@@ -568,7 +578,7 @@ let futureC: Future<ResultC> = /* ... */
 let futureABC = zip(futureA, futureB, futureC)
 ```
 
-***
+---
 
 I thank everyone who reached the end of this doc. You are awesome!
 
