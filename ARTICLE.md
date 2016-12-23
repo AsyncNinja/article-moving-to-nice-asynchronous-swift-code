@@ -284,7 +284,7 @@ extension MyService {
   func person(identifier: String,
               callback: @escaping (Person?, Error?) -> Void) {
 
-    /* do not forget the weak itself */
+    /* do not forget the [weak self] */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
 
@@ -307,13 +307,13 @@ extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
 
-      /* do not forget the weak itself */
+      /* do not forget the [weak self] */
       [weak self] (person, error) in
 
       /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
 
-        /* do not forget the weak itself */
+        /* do not forget the [weak self] */
         [weak self] in
         guard let strongSelf = self else { return }
 
@@ -351,7 +351,7 @@ extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
 
-      /* do not forget the weak itself */
+      /* do not forget the [weak self] */
       [weak self] _ in
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
@@ -370,7 +370,7 @@ extension MyViewController {
       /* do not forget to dispatch to the main queue */
       .onComplete(executor: .main) {
 
-        /* do not forget the weak itself */
+        /* do not forget the [weak self] */
         [weak self] (personOrError) in
         guard let strongSelf = self else { return }
 
