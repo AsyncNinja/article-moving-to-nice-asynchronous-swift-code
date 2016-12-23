@@ -548,7 +548,7 @@ Looks like our attempt to meet all [acceptance criteria](#acceptance-criteria-fo
 and I hope that you'll find [AsyncNinja](http://async.ninja/) useful too.
 
 If you want to take a deeper look at a sample code or try it by yourself,
-visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
+visit [GitHub](https://github.com/AsyncNinja/article-moving-to-nice-asynchronous-swift-code).
 
 ## Further improvements
 Further improvements are possible. This code will look even better with language support

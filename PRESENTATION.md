@@ -1,4 +1,4 @@
-# Steps Towards Nice Asynchronous Swift Code
+# Moving to nice asynchronous Swift code
 This article raises awareness about problems related to asynchronous code
 and provides examples of solving them in the context of programming on Swift 3.0.
 
@@ -7,12 +7,12 @@ and provides examples of solving them in the context of programming on Swift 3.0
 ### Agenda
 * [Description of a sample problem](#description-of-a-sample-problem)
 * [Going back to the sync coding era](#going-back-to-the-sync-coding-era)
-* [Acceptance Criteria for New Approaches](#acceptance-criteria-for-new-approaches) 
-* [Attempt 1.0. Async with Callbacks](#attempt-10-async-with-callbacks)
+* [Acceptance criteria for new approaches](#acceptance-criteria-for-new-approaches) 
+* [Attempt 1.0. Async code with callbacks](#attempt-10-async-with-callbacks)
 * [Attempt 2.0. Futures](#attempt-20-futures)
 * [Revealing danger](#revealing-danger)
-* [Bugfix 1.1. Async with Callbacks (full story)](#bugfix-11-async-with-callbacks-full-story)
-* [Bugfix 2.1. Futures (full story)](#bugfix-21-futures-full-story)
+* [Bugfix 1.1. Async code with callbacks (a full story)](#bugfix-11-async-with-callbacks-full-story)
+* [Bugfix 2.1. Futures (a full story)](#bugfix-21-futures-full-story)
 * [Refactoring 2.2. Futures and ExecutionContext](#refactoring-22-futures-and-executioncontext)
 * [Summary](#summary)
 * [Further improvements](#further-improvements)
@@ -24,6 +24,8 @@ Here's the source data:
 * `Person` is an example of a struct that contains information about the person.
 * `MyService` is an example of a class that serves as an entry point to the model.
 * `MyViewController` is an example of a class that manages UI-related instances.
+
+---
 
 `MyService` must provide `Person` to `MyViewController` in return to the request
 with the corresponding identifier. It may not have the requested information in memory,
@@ -48,6 +50,8 @@ return the person *(or nil if there is no such a person)* or throw an issue if s
 
 ---
 
+That's how it looks in use:
+
 ```swift
 extension MyViewController {
   func present(personWithID identifier: String) {
@@ -55,8 +59,7 @@ extension MyViewController {
     /* do not forget to dispatch to the background queue */
     DispatchQueue.global().async {
       do {
-        let person = try self.myService
-          .person(identifier: identifier)
+        let person = try self.myService.person(identifier: identifier)
 
         /* do not forget to dispatch to the main queue */
         DispatchQueue.main.async {
@@ -111,11 +114,11 @@ we are going to explore option #2.
 
 * possibility of deadlocks in `MyService`
 * "do not forget" **x3**
-* *hidden danger, see "[Revealing danger](#revealing-danger)"*)
+* *hidden danger, see "[Revealing danger](#revealing-danger)"*
 
 ---
 
-## Acceptance Criteria for New Approaches
+## Acceptance criteria for new approaches
 Now, let's try to find a new coding approach that eliminates all the issues
 of the synchronous one. This approach must match the following acceptance criteria: 
 
@@ -125,14 +128,16 @@ of the synchronous one. This approach must match the following acceptance criter
 
 ---
 
-## Attempt 1.0. Async with Callbacks
+## Attempt 1.0. Async code with callbacks
 We can use closures (aka blocks) as callback starting from OS X 10.6 and iOS 4.0,
 which opens another dimension in making asynchronous flows.
+
+---
 
 ```swift
 extension MyService {
    func person(identifier: String,
-               callback: @escaping (Person?, Error?) -> Void) {
+          callback: @escaping (Person?, Error?) -> Void) {
     self.internalQueue.async {
       let person = /*fetch the person from the network*/
 
@@ -142,14 +147,13 @@ extension MyService {
   }
 }
 ```
-
-So, we are passing a callback as the last argument. 
+So, we are passing a callback as a last argument. 
 This interface looks a little bit uglier than the previous one.
-It looked more like a [pure](https://en.wikipedia.org/wiki/Pure_function) function, but now is not.
+It looked more like a [pure](https://en.wikipedia.org/wiki/Pure_function) function, but now it is not.
 
 ---
 
-Let's check it in-use.
+However, let's check it in-use.
 
 ```swift
 extension MyViewController {
@@ -174,7 +178,7 @@ extension MyViewController {
 
 ---
 
-### Summary: Attempt 1.0. Async with Callbacks
+### Summary: Attempt 1.0. Async code with callbacks
 
 **Pros**
 
@@ -183,23 +187,22 @@ extension MyViewController {
 
 **Cons**
 
-* adds another kind of "do not forget"
-* method output is listed as argument
+* a new kind of "do not forget" added
+* method output is listed as an argument
 * "do not forget" **x2**
-* *hides danger, see "[Revealing danger](#revealing-danger)"*
+* *hidden danger, see "[Revealing danger](#revealing-danger)"*
 
 ---
 
 ## Attempt 2.0. Futures
-Let's try one more approach. Idea futures has involved separately. It is a great.
-In combination with closures makes this approach even more powerful.
+The idea of futures has evolved separately and it is great, especially if combined with closures.
 
 > <[wikipedia](https://en.wikipedia.org/wiki/Futures_and_promises)> ... (futures)
 > describe an object that acts as a proxy for a result that is initially unknown,
 > usually because the computation of its value is yet incomplete.
 
-This is more advanced approach than previous one. So make sure that you read explanations
-below code if you are unfamiliar with this idea.
+This is more advanced approach than the previous one, thus make sure that you read
+explanations below the code if you are unfamiliar with this idea.
 
 ---
 
@@ -207,7 +210,7 @@ below code if you are unfamiliar with this idea.
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
-      return /*fetch the person from network*/
+      return /*fetch the person from the network*/
     }
   }
 }
@@ -216,17 +219,17 @@ extension MyService {
 ---
 
 >
-> Short explanation of what has happened.
+> *Brief explanation*
 >
-> Call of function `future(executor: ...) { ... }` does two things
+> Call of the `future(executor: ...) { ... }` function does the following:
 >
-> 1. returns `Future<Person?>`
-> 2. asynchronously executes closure on specified *executor*. Returning value from the closure will cause future to complete
+> 1. Returns `Future<Person?>`
+> 2. Asynchronously executes a closure using the specified *executor*. Returning a value from the closure causes future to be completed.
 >
-> *Executor* is an abstraction that basically describes an object that can execute block,
-> e.g. `DispatchQueue`, `NSManagedObjectContext` and etc.
+> The *executor* is an abstraction that basically describes an object that can execute a block,
+> e.g. `DispatchQueue`, `NSManagedObjectContext`, and so on.
 >
-> So we've dispatched execution of "fetch the person from network" and returned future.
+> So, we've dispatched execution of "fetch the person from the network" and returned the future.
 >
 
 ---
@@ -255,14 +258,14 @@ extension MyViewController {
 ---
 
 >
-> Short explanation of what has happened.
+> *Brief explanation*
 >
 > Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
-> With line `.onComplete(executor: .main) {` we've specified reaction on completion of the future.
-> `executor: main` means that specified closure will be executed on the main executor aka main queue.
-> This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost like an `Optional<T>` from standard library,
-> except it has case `.failure(Error)` instead of `.none`
-> So by switching between two available cases we are either presenting a person (`Person`) or presenting an error.
+> Line `.onComplete(executor: .main) {` specifies the reaction on completion of the future.
+> `executor: main` means that the specified closure is executed using the main executor aka the main queue.
+> This closure has a single argument `Fallible<Person?>`. `Fallible<T>` is almost the same as `Optional<T>` from the standard library,
+> except for it has the `.failure(Error)` case instead of `.none`
+> Thus, we present either a person (`Person`) or an error by switching between two available cases.
 >
 
 ---
@@ -272,63 +275,66 @@ extension MyViewController {
 **Pros**
 
 * `MyService` interface and implementation looks simple
-* fixes 2 "do not forget"s
+* 2 "do not forget"s fixed
 * no deadlocks
 
 **Cons**
 
-* one more library
-* "do not forget" **x2**
-* *hides danger, see "[Revealing danger](#revealing-danger)"*
+* one more library used
+* "do not forget" **x1**
+* *hidden danger, see "[Revealing danger](#revealing-danger)"*
 
-Both interface and implementation look okay. Never the less both approaches hide danger. Let's reveal it.
+Both interface and implementation look okay. Nevertheless, both approaches hide some danger. Let's reveal it.
 
 ---
 
 ## Revealing danger
-Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are *active objects* that
-are aware of queues, dispatches, threads and etc.
+Let's talk about a lifetime of `MyService` and `MyViewController`. Both of them are
+*active objects* that are aware of queues, dispatches, threads, and so on.
 
 ---
 
-So here is the scenario:
+So, here is the scenario:
 
-1. User presses button "Refresh Person Info"
-2. `MyViewController` calls method `self.myService.person(identifier: identifier)`
-3. `MyService` starts to fetch the person from network
-4. There are some network issues
-5. User does not want to wait for too long, so he/she is just closing window/popover/modal view/anything
-6. The owner of `MyViewController` does not need the view controller anymore. So owner releases reference to view controller assuming that all memory allocated by `MyViewController` will be released
-7. `MyViewController` is still retained by closure, so it will retain it's resources until the request completes
-8. Request might not complete for a while (depending on networking configs and etc)
-
----
-
-**As result**: memory consumption will grow, operations will continue running even if there is no need for results anymore.
-We have to fix this because memory and CPU resources are limited.
+1. A user clicks the "Refresh Person Info" button.
+2. `MyViewController` calls the `self.myService.person(identifier: identifier)` method.
+3. `MyService` starts to fetch the person from the network.
+4. Some network issues occur.
+5. The user does not want to wait for too long and decides to close a window/popover/modal view/anything.
+6. The owner of `MyViewController` does not need the view controller anymore. So, they release a reference to view the controller assuming that the memory allocated by `MyViewController` will be released.
+7. `MyViewController` is still retained by the closure, thus it retains its resources until the request is completed.
+8. Completing the request might take a while (depending on the network configs, and so on).
 
 ---
 
-## Bugfix 1.1. Async with Callbacks (full story)
-The usual fix involves adding `weak`s all over the place.
+**Results**: memory consumption grows, operations continue to be running even if there is no need for results anymore.
+
+We must fix these issues because memory and CPU resources are limited.
+
+---
+
+## Bugfix 1.1. Async code with callbacks (a full story)
+A usual fix involves adding `weak`s all over the place.
+
+---
 
 ```swift
 extension MyService {
   func person(identifier: String,
-              callback: @escaping (Person?, Error?) -> Void) {
+         callback: @escaping (Person?, Error?) -> Void) {
 
-    /* do not forget weak self */
+    /* do not forget the weak itself */
     self.internalQueue.async { [weak self] in
       guard let strongSelf = self else {
 
-        /* do not forget to add call of callback here */
+        /* do not forget to add a call of the callback here */
         callback(nil, ModelError.serviceIsMissing)
         return
       }
 
-      let person = /*fetch the person from network*/
+      let person = /*fetch the person from the network*/
 
-      /* do not forget to add call of callback here */
+      /* do not forget to add a call of the callback here */
       callback(person, nil)
     }
   }
@@ -341,14 +347,11 @@ extension MyService {
 extension MyViewController {
   func present(personWithID identifier: String) {
     self.myService.person(identifier: identifier) {
-
-      /* do not forget weak self */
+      /* do not forget the weak itself */
       [weak self] (person, error) in
-
       /* do not forget to dispatch to the main queue */
       DispatchQueue.main.async {
-
-        /* do not forget weak self */
+        /* do not forget the weak itself */
         [weak self] in
         guard let strongSelf = self else { return }
 
@@ -362,40 +365,40 @@ extension MyViewController {
   }
 }
 ```
-This solution definitely fixes described issue but does not meet our [acceptance criteria](#acceptance-criteria-for-new-approaches).
+This solution definitely fixes the described issues but does not meet our [acceptance criteria](#acceptance-criteria-for-new-approaches).
 
 ---
 
-### Summary: Bugfix 1.1. Async with Callbacks (full story)
+### Summary: Bugfix 1.1. Async code with callbacks (a full story)
 
 **Pros**
 
-* removes hidden danger
+* hidden danger removed
 * no deadlocks
 
 **Cons**
 
-* looks ugly
-* adds another kind of "do not forget"
-* method output is listed as argument
+* ugly look
+* a new kind of "do not forget" added
+* method output is listed as an argument
 * "do not forget" **x6**
 
 ---
 
-## Bugfix 2.1. Futures (full story)
-Let's apply the fix to futures-based approach. Maybe it will look better here.
+## Bugfix 2.1. Futures (a full story)
+Now, let's apply the fix to the futures-based approach. Hopefully, it will look better here.
 
 ```swift
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(executor: .queue(self.internalQueue)) {
 
-      /* do not forget weak self */
+      /* do not forget the weak itself */
       [weak self] _ in
       guard let strongSelf = self
         else { throw ModelError.serviceIsMissing }
 
-      return /*fetch the person from network*/
+      return /*fetch the person from the network*/
     }
   }
 }
@@ -411,7 +414,7 @@ extension MyViewController {
       /* do not forget to dispatch to the main queue */
       .onComplete(executor: .main) {
 
-        /* do not forget weak self */
+        /* do not forget the weak itself */
         [weak self] (personOrError) in
         guard let strongSelf = self else { return }
 
@@ -426,65 +429,63 @@ extension MyViewController {
   }
 }
 ```
-Nope. It does not look better.
+Alas, it does not look any better.
 
 ---
 
-### Summary: Bugfix 2.1. Futures (full story)
+### Summary: Bugfix 2.1. Futures (a full story)
 
 **Pros**
 
-* removes hidden danger
+* hidden danger removed
 * no deadlocks
 
 **Cons**
 
-* one more library
-* adds another kind of "do not forget"
+* one more library added
+* a new kind of "do not forget" added
 * "do not forget" **x3**
 
 ---
 
-Unfortunately, all libraries I've seen that provide futures for Swift finish here.
-We have [acceptance criteria](#acceptance-criteria-for-new-approaches) to achieve, so we must move forward.
+Unfortunately, I couldn't find a Swift futures library that wouldn't have finished here.
+Yet, we have [acceptance criteria](#acceptance-criteria-for-new-approaches) to match, and therefore we are moving forward.
 
 ---
 
 ## Refactoring 2.2. Futures and ExecutionContext
-I've been working on concurrency library [AsyncNinja](http://async.ninja/) to achieve these [acceptance criteria](#acceptance-criteria-for-new-approaches).
-So we'll explore solutions implemented there. But let's make a few assumptions before we explore this approach.
+I've been working on a concurrency library [AsyncNinja](http://async.ninja/) to achieve these [acceptance criteria](#acceptance-criteria-for-new-approaches).
+So, we'll explore solutions implemented within it. However, let's make a few assumptions before exploring this approach.
 
 ---
 
 ### Assumptions
-#### for `MyService`
-
-* `MyService` is an active object that has mutable state
-* This state is allowed to change only on serial queue owned by `MyService` (in oppose to locks in synchronous approach)
+#### `MyService`:
+* `MyService` is an active object that has a mutable state
+* This state can be changed in only a serial queue owned by `MyService` (as opposed to locks in the synchronous approach)
 * `MyService` owns all operations it initiates, but neither of initiated operations own `MyService`
 * `MyService` communicates with other active objects predominantly using asynchronous calls
-
----
-
+    
+---    
+    
 ### Assumptions
-#### for `MyViewController`
-
-* `MyViewController` is an active object that has mutable state (UI)
-* This state is allowed to change only on the main queue (in oppose to locks in synchronous approach)
+#### `MyService`:
+* `MyViewController` is an active object that has a mutable state (UI)
+* This state can be changed in the main queue only (as opposed to locks in the synchronous approach)
 * `MyViewController` owns all operations it initiates, but neither of initiated operations own `MyViewController`
-* `MyViewController` communicates with another UI related classes predominantly on the main queue 
-* `MyViewController` communicates with other active objects predominantly using asynchronous calls
+* `MyViewController` communicates with other UI-related classes, predominantly in the main queue
+* `MyViewController` communicates with other active objects, predominantly using asynchronous calls
 
 ---
 
-So I conclude that `MyService` and `MyViewController` can be conformed to
-protocol `ExecutionContext` from [AsyncNinja](http://async.ninja/) library.
-That basically means that they can asynchronously execute code that influences their lifetime and internal state.
+Therefore, I conclude that `MyService` and `MyViewController` can be conformed to
+the `ExecutionContext` protocol from the [AsyncNinja](http://async.ninja/) library.
+Basically, it means that they can execute the code asynchronously, which influences their lifetime and internal state.
 
 ---
 
-### Diving into AsyncNinja Implementation
-For the further explanation, we'll have to discuss details of [AsyncNinja](http://async.ninja/)'s implementation for a bit. So `ExecutionContext` protocol looks like this:
+### Diving into AsyncNinja implementation
+We need to discuss the details of [AsyncNinja](http://async.ninja/)'s implementation to go on with achieving our goals. So, `ExecutionContext` protocol looks like this:
 
 ```swift
 public protocol ExecutionContext : class {
@@ -494,13 +495,13 @@ public protocol ExecutionContext : class {
 }
 ```
 
+You must have `func releaseOnDeinit(_ object: AnyObject)` and `func notifyDeinit(_ block: @escaping () -> Void)` methods to memorize management features. However, implementing them for each `ExecutionContext` is a boilerplate code too.
+
 ---
 
-You'll have to have `func releaseOnDeinit(_ object: AnyObject)` and `func notifyDeinit(_ block: @escaping () -> Void)`
-methods in order to memory management features. But implementing those for each `ExecutionContext` is a boilerplate code too.
-So you can just use another handy protocol that provides implementation of methods for those who have `ReleasePool` instance.
+Thus, you can just use another handy protocol that provides implementation of methods for those objects that have the `ReleasePool` instance.
 
-*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s primitive. It will retain objects until you call `func drain()`.*
+*`ReleasePool` is also [AsyncNinja](http://async.ninja/)'s primitive. It retains objects until you call `func drain()`.*
 
 ```swift
 public protocol ReleasePoolOwner {
@@ -508,19 +509,22 @@ public protocol ReleasePoolOwner {
 }
 ```
 
-I agree that it might seem complicated. But do not have to rethink/write this each time.
+I agree that it might seem complicated, but if you use this library, there's no need to rethink/write it every time.
 
 ---
 
-Let's take a look at the code that you actually have to right in order to conform to `ExecutionContext`:
+Let's take a look at the code that you actually have to write to conform to `ExecutionContext`:
 
 ```swift
 class MyService : ExecutionContext, ReleasePoolOwner {
   /* own serial queue */
-  let internalQueue = DispatchQueue(label: "my-service-queue")
+  let internalQueue =
+    DispatchQueue(label: "my-service-queue")
   
-  /* present internal queue as executor */
-  var executor: Executor { return .queue(self.internalQueue) }
+  /* present internal queue as an executor */
+  var executor: Executor {
+    return .queue(self.internalQueue)
+  }
 
   /* own release pool */
   let releasePool = ReleasePool()
@@ -529,24 +533,24 @@ class MyService : ExecutionContext, ReleasePoolOwner {
 }
 ```
 
-That is it. Three additional lines that you will not forget thanks to Swift's types safety.
+That is it. A few additional lines that you will not forget thanks to Swift's types safety.
 
 ---
 
-[AsyncNinja](http://async.ninja/) also provides conformance to `ExecutionContext`
-for obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext` and etc,
-so there is no need to conform `MyViewController` to `ExecutionContext` manually.
+[AsyncNinja](http://async.ninja/) also provides conformance with `ExecutionContext`
+to obvious active objects, e.g. `UIResponder`, `NSResponder`, `NSManagedObjectContext`, and so on.
+Thus, there is no need to conform `MyViewController` to `ExecutionContext` manually.
 
 ---
 
-### Back to Solution
-Okay. So now we know all of the details. Let's continue with implementation of person fetching and presentation.
+### Going back to the solution
+Okay, now we know all details. Let's continue with the implementation of the person fetching and presentation.
 
 ```swift
 extension MyService {
   func person(identifier: String) -> Future<Person?> {
     return future(context: self) { (self) in
-      return /*fetch the person from network*/
+      return /*fetch the person from the network*/
     }
   }
 }
@@ -555,13 +559,13 @@ extension MyService {
 ---
 
 >
-> Short explanation of what has happened.
+> *Brief explanation*
 >
-> `MyService` as mentioned before conforms to `ExecutionContext`. This allows us to call
-> `future(context: ...) { ... }` that similar to previously mentioned function that dispatches closure and returns future.
-> The key difference between `future(context: ...) { ... }` and `future(executor: ...) { ... }` is that first is contextual.
-> It means that execution of closure is bound to context. Closure will be provided with context instance as first argument.
-> It means that boilerplate memory management will be done inside `future(context: ...) { ... }` rather then in calling code.
+> As mentioned higher, `MyService` conforms to `ExecutionContext`. This allows us to call
+> `future(context: ...) { ... }` that is similar to the previously mentioned function that dispatches a closure and returns a future.
+> The key difference between `future(context: ...) { ... }` and `future(executor: ...) { ... }` is that the first one is contextual.
+> It means that execution of the closure is bound to the context. The closure, as the first argument, is provided with a context instance.
+> Thus, boilerplate memory management is performed inside `future(context: ...) { ... }` rather than within the calling code.
 >
 
 ---
@@ -588,20 +592,19 @@ extension MyViewController {
 ---
 
 >
-> Short explanation of what has happened.
+> *Brief explanation*
 >
-> `MyViewController` as mentioned before conforms to `ExecutionContext`.
-> Call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
-> With line `.onComplete(context: self) {` we've specified reaction on completion of the future.
-> `context: self` means that specified closure will be executed on `ExecutionContext`'s
-> executor (main queue in this case) if context is still alive.
+> As mentioned earlier, `MyViewController` conforms to `ExecutionContext`.
+> A call of `self.myService.person(identifier: identifier)` provides `Future<Person?>`.
+> The `.onComplete(context: self) {` line specifies the reaction on completion of the future.
+> `context: self` means that the specified closure is executed using `ExecutionContext`'s
+> executor (the main queue in this case) if the context is still alive.
 > This closure has a context and `Fallible<Person?>` as arguments.
 >
 
 ---
 
-So as you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/)
-encapsulates 99% of this complexity. This must help you to reduce an amount of boilerplate code.
+As you see, there is no need to think of memory management so often. [AsyncNinja](http://async.ninja/) encapsulates 99% of this complexity. This must help you reduce the amount of boilerplate code.
 Just conform your active object to `ExecutionContext` and use futures safely.
 
 ---
@@ -611,33 +614,33 @@ Just conform your active object to `ExecutionContext` and use futures safely.
 **Pros**
 
 * `MyService` interface and implementation looks simple
-* removes hidden danger
+* hidden danger removed
 * no deadlocks
 
 **Cons**
 
-* one more library
+* one more library added
 
 ---
 
 ## Summary
-I love to pick between multiple variants using math. So:
+I love to choose between multiple variants using math. So:
 ![Summary](Resources/summary.png)
 *[Summary as Numbers Sheet](Resources/summary.numbers.zip)*
 
-Looks like our attempt to achieve all [acceptance criteria](#acceptance-criteria-for-new-approaches) completed successfully.
-
 ---
 
-I hope you'll find [AsyncNinja](http://async.ninja/) useful too.
+Looks like our attempt to meet all [acceptance criteria](#acceptance-criteria-for-new-approaches) is successful
+and I hope that you'll find [AsyncNinja](http://async.ninja/) useful too.
 
-If you want to take a deeper look at sample code or experiment yourself
-visit [GitHub](https://github.com/AsyncNinja/post-steps-towards-async).
+If you want to take a deeper look at a sample code or try it by yourself,
+visit [GitHub](https://github.com/AsyncNinja/article-moving-to-nice-asynchronous-swift-code).
 
 ---
 
 ## Further improvements
-Further improvements are possible. This code will look event better with language support (something like `async`, `yield` and etc). But we are not there yet.
+Further improvements are possible. This code will look even better with language support
+(something like `async`, `yield`, etc.), but we are not there yet.
 
 ---
 
@@ -655,11 +658,9 @@ val futureABC = for{
 } yield (resultA, resultB, resultC)
 ```
 
-I personally do not see advantage (maybe just yet).
-
 ---
 
-With [AsyncNinja](http://async.ninja/) you can do this:
+Now I personally do not see any advantage here because you can do the following using [AsyncNinja](http://async.ninja/):
 
 ```swift
 let futureA: Future<ResultA> = /* ... */
@@ -671,7 +672,7 @@ let futureABC = zip(futureA, futureB, futureC)
 
 ---
 
-I thank everyone who reached down here. You are awesome!
+I thank everyone who reached the end of this doc. You are awesome!
 
-I want to give a shout-out to [MacPaw](https://macpaw.com) for helping me with editing and implementing these ideas.
-We will use these findings in next update of [Gemini](https://macpaw.com/gemini) so stay tuned.
+Also, I want to give a shout-out to [MacPaw](https://macpaw.com) for helping me with editing and implementing these ideas.
+We will use these findings in the next update of [Gemini](https://macpaw.com/gemini), so stay tuned.
