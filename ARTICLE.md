@@ -406,6 +406,9 @@ Yet, we have [acceptance criteria](#acceptance-criteria-for-new-approaches) to m
 ---
 
 ## Refactoring 2.2. Futures and ExecutionContext
+
+![Ninja Cat](Resources/NinjaCat.png)
+
 I've been working on a concurrency library [AsyncNinja](http://async.ninja/) to achieve these [acceptance criteria](#acceptance-criteria-for-new-approaches).
 So, we'll explore solutions implemented within it. However, let's make a few assumptions before exploring this approach.
 
