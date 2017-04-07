@@ -34,7 +34,7 @@ extension MyService : PersonsProviderOnFutures {
   }
 
   public func page(index: Int, personsPerPage: Int, ordering: Ordering) -> Future<[Person]?> {
-    return future(executor: .utility, block: simulateNetwork)
+    return future(executor: .utility, simulateNetwork)
       .map(executor: .queue(self.internalQueue)) { _ in
         return self.storage
           .page(index: index, personsPerPage: personsPerPage, ordering: ordering)

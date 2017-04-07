@@ -14,8 +14,6 @@ cd article-moving-to-nice-asynchronous-swift-code
 ```bash
 git clone https://github.com/AsyncNinja/article-moving-to-nice-asynchronous-swift-code.git
 cd article-moving-to-nice-asynchronous-swift-code
-swift package generate-xcodeproj
+swift package update
 open article-moving-to-nice-asynchronous-swift-code.xcodeproj
 ```
-
-Do not forget to provide path to `persons.json` as argument when launching apps from Xcode. [Like this](Resources/how-to-provide-path-to-persons-json-in-xcode.png)

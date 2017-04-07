@@ -60,6 +60,6 @@ let package = Package(
     ],
 	dependencies: [
     	.Package(url: "https://github.com/AsyncNinja/AsyncNinja.git",
-    			 majorVersion: 0),
+    			 majorVersion: 1),
     ]
 )

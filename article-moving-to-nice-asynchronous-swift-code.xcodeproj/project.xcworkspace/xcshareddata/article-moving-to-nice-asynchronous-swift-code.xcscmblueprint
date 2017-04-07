@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "E6C7672CEAA9904634E87C69447D7A113AFDA698",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "4E41E1AAC5CE0CB9E905A14AACF4835F358DA409" : 9223372036854775807,
+    "E6C7672CEAA9904634E87C69447D7A113AFDA698" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "D1A497D6-B34F-42EC-B3EC-2BA44EE78B63",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "4E41E1AAC5CE0CB9E905A14AACF4835F358DA409" : "article-moving-to-nice-asynchronous-swift-code\/.build\/checkouts\/AsyncNinja.git-2515510895144339378\/",
+    "E6C7672CEAA9904634E87C69447D7A113AFDA698" : "article-moving-to-nice-asynchronous-swift-code\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "article-moving-to-nice-asynchronous-swift-code",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "article-moving-to-nice-asynchronous-swift-code.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "\/Volumes\/Workshop\/RainyWednesday\/Channels\/article-moving-to-nice-asynchronous-swift-code\/.build\/repositories\/AsyncNinja.git-2515510895144339378",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "4E41E1AAC5CE0CB9E905A14AACF4835F358DA409"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/AsyncNinja\/article-moving-to-nice-asynchronous-swift-code.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "E6C7672CEAA9904634E87C69447D7A113AFDA698"
+    }
+  ]
+}

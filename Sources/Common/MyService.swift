@@ -25,13 +25,18 @@ import Dispatch
 import AsyncNinja
 
 // MyService provides various data. It serves as a glue code for transport and caching
-// This is implementation is obviously fake
 public class MyService : ExecutionContext, ReleasePoolOwner {
-  public let storage: Storage
+  /* own serial queue */
   public let internalQueue = DispatchQueue(label: "my-service-queue")
-  public let releasePool = ReleasePool()
-  public var executor: Executor { return .queue(self.internalQueue) }
 
+  /* present internal queue as an executor */
+  public var executor: Executor { return Executor.queue(self.internalQueue) }
+
+  /* own release pool */
+  public let releasePool = ReleasePool()
+
+  /* implementation */
+  public let storage: Storage
   public init(storage: Storage) {
     self.storage = storage
   }

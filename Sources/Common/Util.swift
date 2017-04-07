@@ -54,11 +54,10 @@ func generateRandom() -> Int {
 }
 
 public func simulateNetwork() throws {
-  let value = UInt32(generateRandom() % 3)
-  guard 0 != value else { // trying to be realistic here
+  if 0 == generateRandom() % 10 {
     throw ModelError.simulatedNetworkIssue
   }
-  sleep(value)
+  sleep(UInt32(generateRandom() % 2) + 1)
 }
 
 public extension Array {
