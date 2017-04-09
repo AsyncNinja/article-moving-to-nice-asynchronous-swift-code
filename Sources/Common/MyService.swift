@@ -30,7 +30,7 @@ public class MyService : ExecutionContext, ReleasePoolOwner {
   public let internalQueue = DispatchQueue(label: "my-service-queue")
 
   /* present internal queue as an executor */
-  public var executor: Executor { return Executor.queue(self.internalQueue) }
+  public var executor: Executor { return Executor(queue: self.internalQueue) }
 
   /* own release pool */
   public let releasePool = ReleasePool()
